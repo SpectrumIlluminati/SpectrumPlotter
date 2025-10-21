@@ -1,0 +1,574 @@
+<!-- templates/sidebarTemplate.html -->
+<div class="sidebar-header">
+    <div class="header-content">
+        <h3>SFAF Data Entry</h3>
+        <div class="header-controls">
+            <select id="systemSelector" class="system-selector">
+                <option value="CONUS">CONUS Standard</option>
+                <option value="USAFE">USAFE</option>
+                <option value="PACOM">PACOM</option>
+            </select>
+            <button id="closeSidebarBtn" class="close-btn">✕</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<div class="tab-navigation">
+    <button class="tab-btn active" data-tab="basic">Basic</button>
+    <button class="tab-btn" data-tab="frequency">Freq/Equip</button>
+    <button class="tab-btn" data-tab="location">Location</button>
+    <button class="tab-btn" data-tab="organization">Org</button>
+    <button class="tab-btn" data-tab="notes">Notes</button>
+    <button class="tab-btn" data-tab="admin">Admin</button>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content">
+
+    <!-- TAB 1: BASIC INFO -->
+    <div id="tab-basic" class="tab-panel active">
+        <div class="form-section">
+            <h4>🔐 Security & Action</h4>
+            <div class="form-row">
+                <label for="field005">005 - Security Classification:</label>
+                <select id="field005" class="form-control" data-field="005">
+                    <option value="">Select...</option>
+                    <option value="U">U - Unclassified</option>
+                    <option value="UE">UE - For Official Use Only</option>
+                    <option value="C">C - Confidential</option>
+                    <option value="S">S - Secret</option>
+                </select>
+                <div class="field-error" id="error-field005"></div>
+            </div>
+            <div class="form-row">
+                <label for="field010">010 - Type of Action:</label>
+                <select id="field010" class="form-control" data-field="010">
+                    <option value="">Select...</option>
+                    <option value="M">M - Modify</option>
+                    <option value="N">N - New</option>
+                    <option value="D">D - Delete</option>
+                    <option value="R">R - Renew</option>
+                </select>
+                <div class="field-error" id="error-field010"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>📋 Identification</h4>
+            <div class="form-row">
+                <label for="field102">102 - Agency Serial Number:</label>
+                <input type="text" id="field102" class="form-control" data-field="102" maxlength="10"
+                    placeholder="AF 079243">
+                <div class="field-error" id="error-field102"></div>
+            </div>
+            <div class="form-row">
+                <label for="field701">701 - Frequency Action Officer:</label>
+                <input type="text" id="field701" class="form-control" data-field="701" maxlength="3" placeholder="T01">
+                <div class="field-error" id="error-field701"></div>
+            </div>
+            <div class="form-row">
+                <label for="field702">702 - Control/Request Number:</label>
+                <input type="text" id="field702" class="form-control" data-field="702" maxlength="15"
+                    placeholder="AFSOC 2025-202">
+                <div class="field-error" id="error-field702"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>📅 Dates</h4>
+            <div class="form-row">
+                <label for="field142">142 - Review Date:</label>
+                <input type="date" id="field142" class="form-control" data-field="142">
+                <div class="field-error" id="error-field142"></div>
+            </div>
+            <div class="form-row">
+                <label for="field143">143 - Revision Date:</label>
+                <input type="date" id="field143" class="form-control" data-field="143">
+                <div class="field-error" id="error-field143"></div>
+            </div>
+            <div class="form-row">
+                <label for="field144">144 - Approval Authority:</label>
+                <select id="field144" class="form-control" data-field="144">
+                    <option value="">Select...</option>
+                    <option value="Y">Y - Yes</option>
+                    <option value="N">N - No</option>
+                </select>
+                <div class="field-error" id="error-field144"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: FREQUENCY & EQUIPMENT -->
+    <div id="tab-frequency" class="tab-panel">
+        <div class="form-section">
+            <h4>📡 Frequency Data</h4>
+            <div id="frequency-entries">
+                <div class="dynamic-entry frequency-entry" data-entry="1">
+                    <div class="entry-header">
+                        <span class="entry-title">Primary Frequency</span>
+                    </div>
+                    <div class="form-row">
+                        <label for="field110_1">110 - Frequency(ies):</label>
+                        <input type="text" id="field110_1" class="form-control" placeholder="K4460.5(4459.15)">
+                    </div>
+                    <div class="form-row">
+                        <label for="field113_1">113 - Station Class:</label>
+                        <input type="text" id="field113_1" class="form-control" maxlength="4" placeholder="MO">
+                    </div>
+                    <div class="form-row">
+                        <label for="field114_1">114 - Emission Designator:</label>
+                        <input type="text" id="field114_1" class="form-control" maxlength="11" placeholder="2K70J3E">
+                    </div>
+                    <div class="form-row">
+                        <label for="field115_1">115 - Transmitter Power:</label>
+                        <input type="text" id="field115_1" class="form-control" maxlength="9" placeholder="W500">
+                    </div>
+                </div>
+            </div>
+            <button id="addFrequencyBtn" class="add-btn">+ Add Frequency Entry</button>
+        </div>
+
+        <div class="form-section">
+            <h4>🔧 Transmitter Equipment</h4>
+            <div id="equipment-entries">
+                <div class="dynamic-entry equipment-entry" data-entry="1">
+                    <div class="entry-header">
+                        <span class="entry-title">Primary Equipment</span>
+                    </div>
+                    <div class="form-row">
+                        <label for="field340_1">340 - Equipment Nomenclature:</label>
+                        <input type="text" id="field340_1" class="form-control" maxlength="18"
+                            placeholder="G,AN/PRC-160(V)">
+                    </div>
+                    <div class="form-row">
+                        <label for="field343_1">343 - Equipment Certification ID:</label>
+                        <input type="text" id="field343_1" class="form-control" maxlength="15"
+                            placeholder="J/F 12/11171">
+                    </div>
+                </div>
+            </div>
+            <button id="addEquipmentBtn" class="add-btn">+ Add Equipment Entry</button>
+        </div>
+
+        <div class="form-section">
+            <h4>📻 Receiver Equipment</h4>
+            <div id="receiver-entries">
+                <div class="dynamic-entry receiver-entry" data-entry="1">
+                    <div class="entry-header">
+                        <span class="entry-title">Primary Receiver</span>
+                    </div>
+                    <div class="form-row">
+                        <label for="field440_1">440 - Equipment Nomenclature:</label>
+                        <input type="text" id="field440_1" class="form-control" maxlength="18"
+                            placeholder="G,AN/PRC-160(V)">
+                    </div>
+                    <div class="form-row">
+                        <label for="field443_1">443 - Equipment Certification ID:</label>
+                        <input type="text" id="field443_1" class="form-control" maxlength="15"
+                            placeholder="J/F 12/11171">
+                    </div>
+                </div>
+            </div>
+            <button id="addReceiverBtn" class="add-btn">+ Add Receiver Entry</button>
+        </div>
+    </div>
+
+    <!-- TAB 3: LOCATION & ANTENNA -->
+    <div id="tab-location" class="tab-panel">
+        <div class="form-section">
+            <h4>📍 Transmitter Location</h4>
+            <div class="form-row">
+                <label for="field300">300 - State/Country:</label>
+                <input type="text" id="field300" class="form-control" data-field="300" maxlength="4" placeholder="FL">
+                <div class="field-error" id="error-field300"></div>
+            </div>
+            <div class="form-row">
+                <label for="field301">301 - Antenna Location:</label>
+                <input type="text" id="field301" class="form-control" data-field="301" maxlength="24"
+                    placeholder="HURLBURT">
+                <div class="field-error" id="error-field301"></div>
+            </div>
+            <div class="form-row">
+                <label for="field303">303 - Antenna Coordinates:</label>
+                <input type="text" id="field303" class="form-control" data-field="303" maxlength="15"
+                    placeholder="302521N0864150W" readonly>
+                <small class="field-help">Auto-filled from map marker position</small>
+                <div class="field-error" id="error-field303"></div>
+            </div>
+            <div class="form-row">
+                <label for="field306">306 - Authorized Radius:</label>
+                <input type="text" id="field306" class="form-control" data-field="306" maxlength="5" placeholder="5B">
+                <div class="field-error" id="error-field306"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>📡 Transmitter Antenna</h4>
+            <div class="form-row">
+                <label for="field357">357 - Antenna Gain:</label>
+                <input type="text" id="field357" class="form-control" data-field="357" maxlength="4" placeholder="0">
+                <div class="field-error" id="error-field357"></div>
+            </div>
+            <div class="form-row">
+                <label for="field362">362 - Antenna Orientation:</label>
+                <input type="text" id="field362" class="form-control" data-field="362" maxlength="3" placeholder="ND">
+                <div class="field-error" id="error-field362"></div>
+            </div>
+            <div class="form-row">
+                <label for="field363">363 - Antenna Polarization:</label>
+                <select id="field363" class="form-control" data-field="363">
+                    <option value="">Select...</option>
+                    <option value="V">V - Vertical</option>
+                    <option value="H">H - Horizontal</option>
+                    <option value="C">C - Circular</option>
+                </select>
+                <div class="field-error" id="error-field363"></div>
+            </div>
+            <div class="form-row">
+                <label for="field373">373 - JSC Area Code:</label>
+                <select id="field373" class="form-control" data-field="373">
+                    <option value="">Select...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <div class="field-error" id="error-field373"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>📻 Receiver Location & Antenna</h4>
+            <div class="form-row">
+                <label for="field400">400 - State/Country:</label>
+                <input type="text" id="field400" class="form-control" data-field="400" maxlength="4" placeholder="FL">
+                <div class="field-error" id="error-field400"></div>
+            </div>
+            <div class="form-row">
+                <label for="field401">401 - Antenna Location:</label>
+                <input type="text" id="field401" class="form-control" data-field="401" maxlength="24"
+                    placeholder="HURLBURT">
+                <div class="field-error" id="error-field401"></div>
+            </div>
+            <div class="form-row">
+                <label for="field402">402 - Receiver Control:</label>
+                <input type="text" id="field402" class="form-control" data-field="402" maxlength="18"
+                    placeholder="I,DOD-S">
+                <div class="field-error" id="error-field402"></div>
+            </div>
+            <div class="form-row">
+                <label for="field403">403 - Antenna Coordinates:</label>
+                <input type="text" id="field403" class="form-control" data-field="403" maxlength="15"
+                    placeholder="302521N0864150W" readonly>
+                <small class="field-help">Auto-filled from map marker position</small>
+                <div class="field-error" id="error-field403"></div>
+            </div>
+            <div class="form-row">
+                <label for="field457">457 - Antenna Gain:</label>
+                <input type="text" id="field457" class="form-control" data-field="457" maxlength="4" placeholder="0">
+                <div class="field-error" id="error-field457"></div>
+            </div>
+            <div class="form-row">
+                <label for="field462">462 - Antenna Orientation:</label>
+                <input type="text" id="field462" class="form-control" data-field="462" maxlength="3" placeholder="ND">
+                <div class="field-error" id="error-field462"></div>
+            </div>
+            <div class="form-row">
+                <label for="field463">463 - Antenna Polarization:</label>
+                <select id="field463" class="form-control" data-field="463">
+                    <option value="">Select...</option>
+                    <option value="V">V - Vertical</option>
+                    <option value="H">H - Horizontal</option>
+                    <option value="C">C - Circular</option>
+                </select>
+                <div class="field-error" id="error-field463"></div>
+            </div>
+            <div class="form-row">
+                <label for="field473">473 - JSC Area Code:</label>
+                <select id="field473" class="form-control" data-field="473">
+                    <option value="">Select...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <div class="field-error" id="error-field473"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>⏰ Time Information</h4>
+            <div class="form-row">
+                <label for="field130">130 - Time:</label>
+                <input type="text" id="field130" class="form-control" data-field="130" maxlength="4" placeholder="3HX">
+                <div class="field-error" id="error-field130"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: ORGANIZATION -->
+    <div id="tab-organization" class="tab-panel">
+        <div class="form-section">
+            <h4>🏛️ Agency Information</h4>
+            <div class="form-row">
+                <label for="field200">200 - Agency:</label>
+                <select id="field200" class="form-control" data-field="200">
+                    <option value="">Select...</option>
+                    <option value="USAF">USAF</option>
+                    <option value="USA">USA</option>
+                    <option value="USN">USN</option>
+                    <option value="USMC">USMC</option>
+                    <option value="USCG">USCG</option>
+                </select>
+                <div class="field-error" id="error-field200"></div>
+            </div>
+            <div class="form-row">
+                <label for="field201">201 - Unified Command:</label>
+                <input type="text" id="field201" class="form-control" data-field="201" maxlength="8"
+                    placeholder="SOCOM">
+                <div class="field-error" id="error-field201"></div>
+            </div>
+            <div class="form-row">
+                <label for="field202">202 - Unified Command Service:</label>
+                <input type="text" id="field202" class="form-control" data-field="202" maxlength="8"
+                    placeholder="AFSOC">
+                <div class="field-error" id="error-field202"></div>
+            </div>
+            <div class="form-row">
+                <label for="field204">204 - Command:</label>
+                <input type="text" id="field204" class="form-control" data-field="204" maxlength="18"
+                    placeholder="AFSOC">
+                <div class="field-error" id="error-field204"></div>
+            </div>
+            <div class="form-row">
+                <label for="field205">205 - Subcommand:</label>
+                <input type="text" id="field205" class="form-control" data-field="205" maxlength="18"
+                    placeholder="AFSOC">
+                <div class="field-error" id="error-field205"></div>
+            </div>
+            <div class="form-row">
+                <label for="field206">206 - Installation Frequency Manager:</label>
+                <input type="text" id="field206" class="form-control" data-field="206" maxlength="18"
+                    placeholder="HURLBURT">
+                <div class="field-error" id="error-field206"></div>
+            </div>
+            <div class="form-row">
+                <label for="field207">207 - Operating Unit:</label>
+                <input type="text" id="field207" class="form-control" data-field="207" maxlength="18"
+                    placeholder="1SOWEX">
+                <div class="field-error" id="error-field207"></div>
+            </div>
+            <div class="form-row">
+                <label for="field209">209 - Area AFC/DoD AFC:</label>
+                <input type="text" id="field209" class="form-control" data-field="209" maxlength="18"
+                    placeholder="GAFC">
+                <div class="field-error" id="error-field209"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: NOTES & DETAILS -->
+    <div id="tab-notes" class="tab-panel">
+        <div class="form-section">
+            <h4>📝 IRAC Notes</h4>
+            <div id="irac-notes-entries">
+                <div class="dynamic-entry notes-entry" data-entry="1">
+                    <div class="entry-header">
+                        <span class="entry-title">IRAC Note #1</span>
+                    </div>
+                    <div class="form-row">
+                        <label for="field500_1">500 - IRAC Notes:</label>
+                        <input type="text" id="field500_1" class="form-control" maxlength="4" placeholder="C010">
+                    </div>
+                </div>
+            </div>
+            <button id="addIracNotesBtn" class="add-btn">+ Add IRAC Note</button>
+        </div>
+
+        <div class="form-section">
+            <h4>💬 Comments</h4>
+            <div id="comments-entries">
+                <div class="dynamic-entry comment-entry" data-entry="1">
+                    <div class="entry-header">
+                        <span class="entry-title">Comment #1</span>
+                    </div>
+                    <div class="form-row">
+                        <label for="field501_1">501 - Notes/Comments:</label>
+                        <input type="text" id="field501_1" class="form-control" maxlength="35"
+                            placeholder="M015,IRAC 43521/1,SPS 22853/1">
+                    </div>
+                </div>
+            </div>
+            <button id="addCommentsBtn" class="add-btn">+ Add Comment</button>
+        </div>
+
+        <div class="form-section">
+            <h4>📋 Descriptions</h4>
+            <div class="form-row">
+                <label for="field502">502 - Description of Requirement:</label>
+                <textarea id="field502" class="form-control" data-field="502" rows="4" maxlength="1440"
+                    placeholder="FREQUENCY IS IN SUPPORT OF MULTIPLE MOBILE CONFIGURATIONS..."></textarea>
+                <div class="field-error" id="error-field502"></div>
+            </div>
+            <div class="form-row">
+                <label for="field503">503 - Agency Free-text Comments:</label>
+                <input type="text" id="field503" class="form-control" data-field="503" maxlength="35"
+                    placeholder="CARRIER(WINDOW) FREQ 4459.15KHZ">
+                <div class="field-error" id="error-field503"></div>
+            </div>
+            <div class="form-row">
+                <label for="field520">520 - Supplementary Details:</label>
+                <textarea id="field520" class="form-control" data-field="520" rows="6" maxlength="1080"
+                    placeholder="FREQUENCY IS IN SUPPORT OF SOF TRAINING OPERATIONS..."></textarea>
+                <div class="field-error" id="error-field520"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>🎯 Function Identifiers</h4>
+            <div class="form-row">
+                <label for="field511">511 - Major Function Identifier:</label>
+                <input type="text" id="field511" class="form-control" data-field="511" maxlength="30"
+                    placeholder="SUSTAINING OPERATIONS">
+                <div class="field-error" id="error-field511"></div>
+            </div>
+            <div class="form-row">
+                <label for="field512">512 - Intermediate Function Identifier:</label>
+                <input type="text" id="field512" class="form-control" data-field="512" maxlength="30"
+                    placeholder="TRAINING">
+                <div class="field-error" id="error-field512"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 6: ADMINISTRATIVE -->
+    <div id="tab-admin" class="tab-panel">
+        <div class="form-section">
+            <h4>🏷️ Other Identifiers</h4>
+            <div class="form-row">
+                <label for="field716">716 - Usage Code:</label>
+                <input type="text" id="field716" class="form-control" data-field="716" maxlength="1" placeholder="1">
+                <div class="field-error" id="error-field716"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>📞 Contact Information</h4>
+            <div class="form-row">
+                <label for="field801">801 - Coordination Data/Remarks:</label>
+                <input type="text" id="field801" class="form-control" data-field="801" maxlength="60"
+                    placeholder="JASON CHILES,8508849444,190520">
+                <div class="field-error" id="error-field801"></div>
+            </div>
+            <div class="form-row">
+                <label for="field803">803 - Requestor Data POC:</label>
+                <input type="text" id="field803" class="form-control" data-field="803" maxlength="60"
+                    placeholder="JORDAN WHITE,8508842714,191030">
+                <div class="field-error" id="error-field803"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>📊 Data Quality</h4>
+            <div class="validation-summary" id="validationSummary">
+                <h5>Field Validation Status</h5>
+                <div class="validation-stats">
+                    <span class="stat-item">Required: <span id="requiredFieldsCount">0/0</span></span>
+                    <span class="stat-item">Errors: <span id="errorFieldsCount">0</span></span>
+                    <span class="stat-item">Complete: <span id="completionPercent">0%</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- TAB 7: FILTERS (Add this after tab-admin) -->
+<div id="tab-filters" class="tab-panel">
+    <div class="form-section">
+        <h4>🔍 Filter Map Objects</h4>
+        <div class="form-row">
+            <label>📍 Location (300/301/303):</label>
+            <input type="text" id="filterLocation" class="form-control" placeholder="State, Location, or Coordinates">
+        </div>
+        <div class="form-row">
+            <label>📡 Frequency (110):</label>
+            <input type="text" id="filterFrequency" class="form-control" placeholder="4460, K4460, or 2400-2500">
+            <div class="filter-presets" style="margin-top: 5px;">
+                <button class="preset-btn" data-range="hf">HF (3-30)</button>
+                <button class="preset-btn" data-range="vhf">VHF (30-300)</button>
+                <button class="preset-btn" data-range="uhf">UHF (300-3000)</button>
+            </div>
+        </div>
+        <div class="form-row">
+            <label>⚡ Power (115):</label>
+            <input type="text" id="filterPower" class="form-control" placeholder="W500, 100-1000">
+        </div>
+        <div class="form-row">
+            <label>🔧 Equipment (340):</label>
+            <input type="text" id="filterEquipment" class="form-control" placeholder="AN/PRC, radio type">
+        </div>
+        <div class="form-row">
+            <label>📊 Emission (114):</label>
+            <input type="text" id="filterEmission" class="form-control" placeholder="J3E, 2K70J3E">
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h4>📊 Filter Results</h4>
+        <div class="filter-stats">
+            <div class="stat-row">
+                <span>Visible Objects:</span>
+                <span id="visibleCount" class="stat-value">0</span>
+            </div>
+            <div class="stat-row">
+                <span>Total Objects:</span>
+                <span id="totalCount" class="stat-value">0</span>
+            </div>
+            <div class="stat-row">
+                <span>Hidden:</span>
+                <span id="hiddenCount" class="stat-value">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h4>🎛️ Quick Actions</h4>
+        <button id="applyMapFilters" class="action-btn save-btn" style="width: 100%; margin-bottom: 10px;">
+            Apply Filters
+        </button>
+        <button id="clearMapFilters" class="action-btn delete-btn" style="width: 100%; margin-bottom: 10px;">
+            Clear All Filters
+        </button>
+        <button id="toggleAllObjects" class="action-btn export-btn" style="width: 100%;">
+            Show/Hide All Objects
+        </button>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="sidebar-actions">
+    <button id="validateBtn" class="action-btn validate-btn">
+        🔍 Validate Fields
+    </button>
+    <button id="saveMetadataBtn" class="action-btn save-btn">
+        💾 Save Data
+    </button>
+    <button id="exportSingleBtn" class="action-btn export-btn">
+        📤 Export SFAF
+    </button>
+    <button id="deleteMarkerBtn" class="action-btn delete-btn">
+        🗑️ Delete Marker
+    </button>
+</div>
+
+<!-- Update the tab navigation section -->
+<div class="tab-navigation">
+    <button class="tab-btn active" data-tab="basic">Basic</button>
+    <button class="tab-btn" data-tab="frequency">Freq/Equip</button>
+    <button class="tab-btn" data-tab="location">Location</button>
+    <button class="tab-btn" data-tab="organization">Org</button>
+    <button class="tab-btn" data-tab="notes">Notes</button>
+    <button class="tab-btn" data-tab="admin">Admin</button>
+    <button class="tab-btn" data-tab="filters">🔍 Filters</button> <!-- NEW TAB -->
+</div>
+

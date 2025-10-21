@@ -1,0 +1,611 @@
+/* css/sidebar.css - Persistent Sidebar Styles */
+
+/* Persistent Resizable Sidebar */
+.persistent-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 400px;
+    min-width: 300px;
+    max-width: 80vw;
+    background: #1a1a1a;
+    color: white;
+    box-shadow: -3px 0 10px rgba(0,0,0,0.5);
+    transform: translateX(350px);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    overflow: hidden;
+}
+
+.persistent-sidebar.open {
+    transform: translateX(0);
+}
+
+.persistent-sidebar.collapsed {
+    transform: translateX(calc(100% - 50px));
+}
+
+/* Resize Handle */
+.resize-handle {
+    width: 6px;
+    background: #333;
+    cursor: ew-resize;
+    position: relative;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+}
+
+.resize-handle:hover {
+    background: #4CAF50;
+}
+
+.resize-handle::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+}
+
+/* Toggle Button */
+.sidebar-toggle {
+    position: absolute;
+    left: -40px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+
+#sidebarToggle {
+    background: #2a2a2a;
+    color: white;
+    border: none;
+    border-radius: 6px 0 0 6px;
+    padding: 10px 8px;
+    cursor: pointer;
+    font-size: 16px;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+#sidebarToggle:hover {
+    background: #4CAF50;
+}
+
+/* Sidebar Content */
+.sidebar-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    background: #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #4CAF50;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.system-selector {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.system-selector:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+    display: flex;
+    background: #222;
+    border-bottom: 1px solid #333;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.tab-navigation::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-btn {
+    background: transparent;
+    color: #ccc;
+    border: none;
+    padding: 12px 15px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    min-width: fit-content;
+}
+
+.tab-btn:hover {
+    background: #333;
+    color: white;
+}
+
+.tab-btn.active {
+    color: #4CAF50;
+    border-bottom-color: #4CAF50;
+    background: #2a2a2a;
+}
+
+/* Tab Content */
+.tab-content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.tab-panel {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+/* Form Elements */
+.form-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 6px;
+    border-left: 4px solid #4CAF50;
+}
+
+.form-section h4 {
+    color: #4CAF50;
+    margin: 0 0 15px 0;
+    font-size: 14px;
+    font-weight: bold;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+}
+
+.form-row {
+    margin-bottom: 12px;
+}
+
+.form-row label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #ccc;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font-size: 12px;
+    box-sizing: border-box;
+    background: #333;
+    color: white;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+.form-control[readonly] {
+    background: #444;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+.form-control.error {
+    border-color: #ff4444;
+}
+
+/* Filter Presets */
+.filter-presets {
+    display: flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.preset-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 10px;
+    flex: 1;
+    transition: background-color 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: #1976D2;
+}
+
+.preset-btn:active {
+    transform: translateY(1px);
+}
+
+/* Action Buttons */
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.action-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+.action-btn:hover {
+    background: #43a047;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.action-btn.secondary {
+    background: #666;
+}
+
+.action-btn.secondary:hover {
+    background: #777;
+}
+
+.action-btn.danger {
+    background: #ff4444;
+}
+
+.action-btn.danger:hover {
+    background: #d32f2f;
+}
+
+.action-btn:disabled {
+    background: #444;
+    color: #777;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Statistics */
+.filter-results {
+    background: #333;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 15px;
+    border: 1px solid #444;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+    align-items: center;
+}
+
+.stat-row:last-child {
+    margin-bottom: 0;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    background: #333;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background: #2a2a2a;
+    padding: 12px 8px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px solid #444;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    background: #333;
+    border-color: #4CAF50;
+}
+
+.stat-label {
+    font-size: 10px;
+    color: #ccc;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4CAF50;
+    line-height: 1;
+}
+
+/* Checkbox and Radio styling */
+.form-row input[type="checkbox"],
+.form-row input[type="radio"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+    accent-color: #4CAF50;
+}
+
+.form-row label:has(input[type="checkbox"]),
+.form-row label:has(input[type="radio"]) {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+/* Select dropdown styling */
+select.form-control {
+    cursor: pointer;
+}
+
+select.form-control option {
+    background: #333;
+    color: white;
+    padding: 4px;
+}
+
+/* Textarea styling */
+textarea.form-control {
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+}
+
+/* Field error states */
+.field-error {
+    color: #ff4444;
+    font-size: 10px;
+    margin-top: 4px;
+    display: none;
+}
+
+.field-error.show {
+    display: block;
+}
+
+.field-help {
+    color: #aaa;
+    font-size: 10px;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* Scrollbar styling for sidebar panels */
+.tab-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tab-panel::-webkit-scrollbar-track {
+    background: #2a2a2a;
+    border-radius: 3px;
+}
+
+.tab-panel::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.tab-panel::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* Loading states */
+.action-btn.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.action-btn.loading::after {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}
+
+/* Focus states for accessibility */
+.tab-btn:focus,
+.action-btn:focus,
+.form-control:focus,
+.preset-btn:focus,
+#sidebarToggle:focus {
+    outline: 2px solid #4CAF50;
+    outline-offset: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .persistent-sidebar {
+        width: 350px;
+        min-width: 280px;
+    }
+    
+    .stat-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .persistent-sidebar {
+        width: 100vw;
+        min-width: 100vw;
+        transform: translateX(100%);
+    }
+    
+    .persistent-sidebar.open {
+        transform: translateX(0);
+    }
+    
+    .persistent-sidebar.collapsed {
+        transform: translateX(calc(100% - 50px));
+    }
+    
+    .resize-handle {
+        display: none;
+    }
+    
+    .sidebar-header {
+        padding: 12px 15px;
+    }
+    
+    .tab-panel {
+        padding: 15px;
+    }
+    
+    .tab-btn {
+        padding: 10px 12px;
+        font-size: 11px;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .filter-presets {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar-header h3 {
+        font-size: 14px;
+    }
+    
+    .form-section {
+        padding: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .tab-panel {
+        padding: 12px;
+    }
+}
+
+/* Animation for smooth transitions */
+.persistent-sidebar *,
+.persistent-sidebar *::before,
+.persistent-sidebar *::after {
+    box-sizing: border-box;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .persistent-sidebar {
+        border: 2px solid white;
+    }
+    
+    .form-control {
+        border-width: 2px;
+    }
+    
+    .action-btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .persistent-sidebar,
+    .action-btn,
+    .tab-btn,
+    .preset-btn,
+    .resize-handle {
+        transition: none;
+    }
+    
+    .action-btn.loading::after {
+        animation: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .persistent-sidebar {
+        display: none;
+    }
+}

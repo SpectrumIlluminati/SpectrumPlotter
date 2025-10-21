@@ -1,0 +1,161 @@
+html, body, #map {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#circleDialog {
+    background: black !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    border: none;
+}
+
+#circleDialog h4 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+}
+
+#circleDialog input,
+#circleDialog label {
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+#circleDialog button {
+    width: 100%;
+    padding: 6px;
+    border: none;
+    border-radius: 5px;
+    background: #4CAF50;
+    color: black;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#circleDialog button:hover {
+    background: #43a047;
+}
+
+#map {
+    height: 100vh;
+    width: 100vw;
+    cursor: crosshair !important;
+}
+
+.cursorTooltip {
+    background: black;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 1000;
+    /* min-width: 180px;
+    max-width: 180px; */
+    overflow: hidden;
+    white-space: nowrap;
+    transition: left 0.05s ease, top 0.05s ease;
+}
+
+#uploadButton {
+    width: 100%;
+    padding: 8px 0;
+    background: #2196F3;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    margin-bottom: 6px;
+}
+
+#uploadButton:hover {
+    background: #1976D2;
+}
+
+#exportOptions {
+    position: absolute;
+    bottom: 40px;
+    right: 5px;
+    background: black;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    font-size: 12px;
+    overflow: hidden;
+}
+
+#export-header {
+    padding: 8px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    background: black;
+    border-bottom: 1px solid black;
+}
+
+#export-body {
+    padding: 10px;
+}
+
+#exportOptions button {
+    display: block;
+    margin-bottom: 8px;
+    width: 100%;
+    padding: 8px;
+    background: #2196F3;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#exportOptions button:hover {
+    background: #1976D2;
+}
+
+#exportOptions.collapsed #export-body {
+    display: none;
+}
+
+#legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: black;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 16px;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+#legend-header {
+    padding: 8px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #f2f2f2;
+    border-bottom: 1px solid #ddd;
+}
+
+#legend-body {
+    padding: 8px 12px;
+}
+
+#legend.collapsed #legend-body {
+    display: none;
+}
+
+.lock-icon {
+    font-size: 18px;
+    color: red;
+    text-shadow: 1px 1px 2px black;
+}
+
+#inputPanel.collapsed #inputPanel-body {
+    display: none;
+}

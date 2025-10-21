@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8" />
+    <title>Spectrum Plotter Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="./css/styles.css" />
+    <link rel="stylesheet" href="./css/sidebar.css" />
+    <!-- <link rel="stylesheet" href="./css/filters.css" /> -->
+    <link rel="stylesheet" href="./css/themes.css" />
+    <link rel="stylesheet" href="./css/leaflet-dark.css" />
+</head>
+<body>
+    <div id="map"></div>
+    
+    <!-- Legend -->
+    <div id="legend">
+        <div id="legend-header">Legend ▾</div>
+        <div id="legend-body">
+            <div><img
+                    src="./images/marker-green.png"
+                    style="width:15px;vertical-align:middle;"> Manual Marker (Editable)</div>
+            <div><img src="./images/marker-blue.png"
+                    style="width:15px;vertical-align:middle;"> Imported Marker (Read-only)</div>
+        </div>
+    </div>
+
+    <!-- Leaflet and dependencies JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil"></script>
+    
+    <!-- Your JS files - CLEANED UP ORDER -->
+    <script type="module" src="./js/utils.js"></script>
+    <script type="module" src="./js/map.js"></script>
+    <script type="module" src="./js/markers.js"></script>
+    <script type="module" src="./js/persistentSidebar.js"></script>
+    <script type="module" src="./js/geometry.js"></script>
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>

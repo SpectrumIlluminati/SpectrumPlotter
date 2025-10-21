@@ -1,0 +1,168 @@
+<!-- Replace old sidebar with this persistent one -->
+<div id="persistentSidebar" class="persistent-sidebar">
+    <!-- Resize handle -->
+    <div class="resize-handle"></div>
+    
+    <!-- Toggle button -->
+    <div class="sidebar-toggle">
+        <button id="sidebarToggle" title="Toggle Sidebar">◀</button>
+    </div>
+    
+    <!-- Sidebar content -->
+    <div class="sidebar-content">
+        <!-- Header -->
+        <div class="sidebar-header">
+            <h3>Spectrum Manager</h3>
+            <div class="header-controls">
+                <select id="systemSelector" class="system-selector">
+                    <option value="CONUS">CONUS</option>
+                    <option value="USAFE">USAFE</option>
+                    <option value="PACOM">PACOM</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="filters">🔍 Filters</button>
+            <button class="tab-btn" data-tab="overview">📊 Overview</button>
+            <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+            <button class="tab-btn" data-tab="object" id="objectTab" style="display:none;">📝 Object</button>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- FILTERS TAB -->
+            <div id="tab-filters" class="tab-panel active">
+                <div class="form-section">
+                    <h4>🔍 SFAF Filters</h4>
+                    <div class="form-row">
+                        <label>📍 Location (300/301/303):</label>
+                        <input type="text" id="filterLocation" class="form-control" placeholder="State, Location, Coordinates">
+                    </div>
+                    <div class="form-row">
+                        <label>📡 Frequency (110):</label>
+                        <input type="text" id="filterFrequency" class="form-control" placeholder="4460, K4460, 2400-2500">
+                        <div class="filter-presets">
+                            <button class="preset-btn" data-range="hf">HF</button>
+                            <button class="preset-btn" data-range="vhf">VHF</button>
+                            <button class="preset-btn" data-range="uhf">UHF</button>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label>⚡ Power (115):</label>
+                        <input type="text" id="filterPower" class="form-control" placeholder="W500, 100-1000">
+                    </div>
+                    <div class="form-row">
+                        <label>🔧 Equipment (340):</label>
+                        <input type="text" id="filterEquipment" class="form-control" placeholder="AN/PRC">
+                    </div>
+                    <div class="form-row">
+                        <label>📊 Emission (114):</label>
+                        <input type="text" id="filterEmission" class="form-control" placeholder="J3E, 2K70J3E">
+                    </div>
+                    
+                    <!-- Filter Actions -->
+                    <div class="filter-actions">
+                        <button id="applyFilters" class="action-btn">Apply Filters</button>
+                        <button id="clearFilters" class="action-btn secondary">Clear All</button>
+                    </div>
+                    
+                    <!-- Filter Results -->
+                    <div class="filter-results">
+                        <div class="stat-row">
+                            <span>Visible:</span>
+                            <span id="visibleCount" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Hidden:</span>
+                            <span id="hiddenCount" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Total:</span>
+                            <span id="totalCount" class="stat-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- OVERVIEW TAB -->
+            <div id="tab-overview" class="tab-panel">
+                <div class="form-section">
+                    <h4>📊 Map Statistics</h4>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Objects:</span>
+                            <span class="stat-value" id="totalObjects">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Markers:</span>
+                            <span class="stat-value" id="totalMarkers">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Geometries:</span>
+                            <span class="stat-value" id="totalGeometries">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Frequencies:</span>
+                            <span class="stat-value" id="uniqueFrequencies">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h4>📁 Data Management</h4>
+                    <button id="exportAllData" class="action-btn">Export All SFAF</button>
+                    <button id="importData" class="action-btn secondary">Import CSV</button>
+                    <button id="clearAllData" class="action-btn danger">Clear All Data</button>
+                </div>
+            </div>
+            
+            <!-- SETTINGS TAB -->
+            <div id="tab-settings" class="tab-panel">
+                <div class="form-section">
+                    <h4>⚙️ Display Settings</h4>
+                    <div class="form-row">
+                        <label>
+                            <input type="checkbox" id="showTooltips" checked>
+                            Show marker tooltips
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <input type="checkbox" id="showCoordinates" checked>
+                            Show coordinates in tooltips
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>Coordinate Format:</label>
+                        <select id="coordFormat" class="form-control">
+                            <option value="dms">DMS (40° 42' 46" N)</option>
+                            <option value="compact">Compact DMS (404246N)</option>
+                            <option value="decimal">Decimal (40.7128)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h4>🎨 Theme</h4>
+                    <div class="form-row">
+                        <label>Map Style:</label>
+                        <select id="mapStyle" class="form-control">
+                            <option value="osm">OpenStreetMap</option>
+                            <option value="satellite">Satellite</option>
+                            <option value="terrain">Terrain</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- OBJECT TAB (hidden by default) -->
+            <div id="tab-object" class="tab-panel">
+                <div id="objectDetails">
+                    <!-- SFAF form will be inserted here when object is selected -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,244 @@
+/* styles.css - Main application styles */
+
+/* Base layout */
+html, body, #map {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#map {
+    height: 100vh;
+    width: 100vw;
+    cursor: crosshair !important;
+}
+
+/* Circle Dialog */
+#circleDialog {
+    background: black !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    border: none;
+}
+
+#circleDialog h4 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+}
+
+#circleDialog input,
+#circleDialog label {
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+#circleDialog button {
+    width: 100%;
+    padding: 6px;
+    border: none;
+    border-radius: 5px;
+    background: #4CAF50;
+    color: black;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#circleDialog button:hover {
+    background: #43a047;
+}
+
+/* Cursor Tooltip */
+.cursorTooltip {
+    background: black;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 1100;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: left 0.05s ease, top 0.05s ease;
+}
+
+/* Export Options Panel */
+#uploadButton {
+    width: 100%;
+    padding: 8px 0;
+    background: #2196F3;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    margin-bottom: 6px;
+}
+
+#uploadButton:hover {
+    background: #1976D2;
+}
+
+#exportOptions {
+    position: absolute;
+    bottom: 40px;
+    right: 5px;
+    background: black;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 900;
+    font-size: 12px;
+    overflow: hidden;
+    transition: right 0.3s ease;
+}
+
+/* Move export options when sidebar is open */
+body.sidebar-open #exportOptions {
+    right: 405px;
+}
+
+#export-header {
+    padding: 8px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    background: black;
+    border-bottom: 1px solid #333;
+    color: white;
+}
+
+#export-body {
+    padding: 10px;
+}
+
+#exportOptions button {
+    display: block;
+    margin-bottom: 8px;
+    width: 100%;
+    padding: 8px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#exportOptions button:hover {
+    background: #1976D2;
+}
+
+#exportOptions.collapsed #export-body {
+    display: none;
+}
+
+/* Legend Panel */
+#legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: black;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 16px;
+    z-index: 900;
+    overflow: hidden;
+}
+
+#legend-header {
+    padding: 8px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #2a2a2a;
+    color: white;
+    border-bottom: 1px solid #333;
+}
+
+#legend-body {
+    padding: 8px 12px;
+    color: white;
+}
+
+#legend.collapsed #legend-body {
+    display: none;
+}
+
+/* Input Panel */
+#inputPanel.collapsed #inputPanel-body {
+    display: none;
+}
+
+/* Icons and Misc */
+.lock-icon {
+    font-size: 18px;
+    color: red;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #exportOptions {
+        right: 10px;
+        bottom: 60px;
+    }
+    
+    body.sidebar-open #exportOptions {
+        right: 10px; /* Don't move on mobile since sidebar takes full width */
+    }
+    
+    #legend {
+        left: 10px;
+        bottom: 10px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .cursorTooltip,
+    #exportOptions,
+    #legend {
+        border: 2px solid white;
+    }
+}
+
+/* Print styles */
+@media print {
+    .cursorTooltip,
+    #exportOptions,
+    #legend,
+    #circleDialog {
+        display: none;
+    }
+    
+    #map {
+        cursor: default !important;
+    }
+}
+
+/* Make Leaflet layers control translucent */
+.leaflet-control-layers {
+    background: rgba(255, 255, 255, 0.9) !important;  /* 70% opacity white background */
+    backdrop-filter: blur(10px);  /* Optional: adds blur effect */
+    border: 1px solid rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-control-layers:hover {
+    background: rgba(255, 255, 255, 0.9) !important;  /* Less transparent on hover */
+}
+
+/* Make the layers control button translucent */
+.leaflet-control-layers-toggle {
+    background: rgba(255, 255, 255, 0.7) !important;
+    backdrop-filter: blur(10px);
+}
+
+.leaflet-control-layers-toggle:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Make the expanded layers list translucent */
+.leaflet-control-layers-list {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(15px);
+}

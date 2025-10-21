@@ -1,0 +1,186 @@
+// js/persistentSidebar.js - With debugging
+export class PersistentSidebar {
+    constructor() {
+        console.log('🔧 PersistentSidebar constructor called');
+        this.isOpen = false;
+        this.currentTab = 'filters';
+        this.init();
+    }
+
+    init() {
+        console.log('🔧 PersistentSidebar init() called');
+        this.createSidebar();
+        this.setupEventListeners();
+        this.setupTabs();
+        console.log('✅ PersistentSidebar initialization complete');
+    }
+
+    createSidebar() {
+        console.log('🔧 Creating sidebar...');
+        
+        // Remove any existing sidebar first
+        const existing = document.getElementById('persistentSidebar');
+        if (existing) {
+            console.log('🗑️ Removing existing sidebar');
+            existing.remove();
+        }
+
+        const sidebarHTML = `
+            <div id="persistentSidebar" class="persistent-sidebar">
+                <div class="sidebar-toggle">
+                    <button id="sidebarToggle" title="Toggle Sidebar">▶</button>
+                </div>
+                <div class="sidebar-content">
+                    <div class="sidebar-header">
+                        <h3>Spectrum Manager</h3>
+                    </div>
+                    <div class="tab-navigation">
+                        <button class="tab-btn active" data-tab="filters">🔍 Filters</button>
+                        <button class="tab-btn" data-tab="overview">📊 Overview</button>
+                        <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+                    </div>
+                    <div class="tab-content">
+                        <div id="tab-filters" class="tab-panel active">
+                            <div class="form-section">
+                                <h4>🔍 SFAF Filters</h4>
+                                <div class="form-row">
+                                    <label>📍 Location:</label>
+                                    <input type="text" id="filterLocation" class="form-control" placeholder="State, Location">
+                                </div>
+                                <div class="form-row">
+                                    <label>📡 Frequency:</label>
+                                    <input type="text" id="filterFrequency" class="form-control" placeholder="4460, K4460">
+                                </div>
+                                <div class="filter-actions">
+                                    <button id="applyFilters" class="action-btn">Apply Filters</button>
+                                    <button id="clearFilters" class="action-btn secondary">Clear All</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-overview" class="tab-panel">
+                            <div class="form-section">
+                                <h4>📊 Map Statistics</h4>
+                                <p>Total markers: <span id="totalMarkers">0</span></p>
+                            </div>
+                        </div>
+                        <div id="tab-settings" class="tab-panel">
+                            <div class="form-section">
+                                <h4>⚙️ Settings</h4>
+                                <div class="form-row">
+                                    <label>
+                                        <input type="checkbox" id="showTooltips" checked>
+                                        Show marker tooltips
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', sidebarHTML);
+        
+        // Verify it was created
+        const sidebar = document.getElementById('persistentSidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        
+        console.log('✅ Sidebar created:', !!sidebar);
+        console.log('✅ Toggle button created:', !!toggleBtn);
+        
+        if (sidebar) {
+            console.log('📏 Sidebar position:', getComputedStyle(sidebar).right);
+            console.log('🎨 Sidebar z-index:', getComputedStyle(sidebar).zIndex);
+        }
+    }
+
+    setupEventListeners() {
+        console.log('🔧 Setting up event listeners...');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                console.log('🖱️ Toggle button clicked');
+                this.toggle();
+            });
+            console.log('✅ Toggle button listener added');
+        } else {
+            console.error('❌ Toggle button not found for event listener');
+        }
+    }
+
+    setupTabs() {
+        console.log('🔧 Setting up tabs...');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        console.log(`📋 Found ${tabBtns.length} tab buttons`);
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                console.log(`🖱️ Tab clicked: ${tabId}`);
+                this.switchTab(tabId);
+            });
+        });
+    }
+
+    toggle() {
+        console.log(`🔄 Toggling sidebar. Currently open: ${this.isOpen}`);
+        if (this.isOpen) {
+            this.close();
+        } else {
+            this.open();
+        }
+    }
+
+    open() {
+        console.log('📂 Opening sidebar...');
+        const sidebar = document.getElementById('persistentSidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        
+        if (sidebar && toggleBtn) {
+            sidebar.classList.add('open');
+            toggleBtn.innerHTML = '◀';
+            this.isOpen = true;
+            console.log('✅ Sidebar opened');
+            console.log('📏 New position:', getComputedStyle(sidebar).right);
+        } else {
+            console.error('❌ Could not open sidebar - elements not found');
+        }
+    }
+
+    close() {
+        console.log('📁 Closing sidebar...');
+        const sidebar = document.getElementById('persistentSidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        
+        if (sidebar && toggleBtn) {
+            sidebar.classList.remove('open');
+            toggleBtn.innerHTML = '▶';
+            this.isOpen = false;
+            console.log('✅ Sidebar closed');
+        } else {
+            console.error('❌ Could not close sidebar - elements not found');
+        }
+    }
+
+    switchTab(tabId) {
+        console.log(`🔄 Switching to tab: ${tabId}`);
+        
+        // Update buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+        // Update panels
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+
+        this.currentTab = tabId;
+        console.log('✅ Tab switched successfully');
+    }
+}
+
+export const persistentSidebar = new PersistentSidebar();
+console.log('📤 PersistentSidebar exported');

@@ -1,0 +1,1642 @@
+<!-- templates/sidebar.html -->
+<div id="persistentSidebar" class="persistent-sidebar">
+    <!-- Fixed Header -->
+    <div class="sidebar-header">
+        <h3>Spectrum Manager</h3>
+        <div class="header-controls">
+            <select id="systemSelector" class="system-selector">
+                <option value="CONUS">CONUS</option>
+                <option value="USAFE">USAFE</option>
+                <option value="PACOM">PACOM</option>
+            </select>
+        </div>
+        <button id="sidebarToggle" class="header-toggle" title="Close Sidebar">✕</button>
+    </div>
+
+    <!-- Fixed Tab Navigation -->
+    <div class="tab-navigation">
+        <button class="tab-btn active" data-tab="filters">🔍 Filters</button>
+        <button class="tab-btn" data-tab="overview">📊 Overview</button>
+        <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+        <button class="tab-btn" data-tab="object" id="objectTab" style="display:none;">📝 Object</button>
+        <button class="tab-btn" data-tab="geometry">📐 Geometry</button>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="sidebar-content">
+        <div class="tab-content">
+            <!-- FILTERS TAB -->
+            <div id="tab-filters" class="tab-panel active">
+                <div class="collapsible-section" data-section="sfaf-filters">
+                    <div class="section-header">
+                        <h4>🔍 SFAF Filters</h4>
+                        <span class="collapse-toggle">▼</span>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-row">
+                            <label>📍 Location (300/301/303):</label>
+                            <input type="text" id="filterLocation" class="form-control"
+                                placeholder="State, Location, Coordinates">
+                        </div>
+                        <div class="form-row">
+                            <label>📡 Frequency (110):</label>
+                            <input type="text" id="filterFrequency" class="form-control"
+                                placeholder="4460, K4460, 2400-2500">
+                            <div class="filter-presets">
+                                <button class="preset-btn" data-range="hf">HF</button>
+                                <button class="preset-btn" data-range="vhf">VHF</button>
+                                <button class="preset-btn" data-range="uhf">UHF</button>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label>⚡ Power (115):</label>
+                            <input type="text" id="filterPower" class="form-control" placeholder="W500, 100-1000">
+                        </div>
+                        <div class="form-row">
+                            <label>🔧 Equipment (340):</label>
+                            <input type="text" id="filterEquipment" class="form-control" placeholder="AN/PRC">
+                        </div>
+                        <div class="form-row">
+                            <label>📊 Emission (114):</label>
+                            <input type="text" id="filterEmission" class="form-control" placeholder="J3E, 2K70J3E">
+                        </div>
+                        <div class="filter-actions">
+                            <button id="applyFilters" class="action-btn">Apply Filters</button>
+                            <button id="clearFilters" class="action-btn secondary">Clear All</button>
+                        </div>
+                        <div class="filter-results">
+                            <div class="stat-row">
+                                <span>Visible:</span>
+                                <span id="visibleCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Hidden:</span>
+                                <span id="hiddenCount" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span>Total:</span>
+                                <span id="totalCount" class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OVERVIEW TAB -->
+            <div id="tab-overview" class="tab-panel">
+                <div class="collapsible-section" data-section="map-stats">
+                    <div class="section-header">
+                        <h4>📊 Map Statistics</h4>
+                        <span class="collapse-toggle">▼</span>
+                    </div>
+                    <div class="section-content">
+                        <div class="stat-grid">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Objects</span>
+                                <span class="stat-value" id="totalObjects">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Markers</span>
+                                <span class="stat-value" id="totalMarkers">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Geometries</span>
+                                <span class="stat-value" id="totalGeometries">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Frequencies</span>
+                                <span class="stat-value" id="uniqueFrequencies">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="collapsible-section" data-section="data-management">
+                    <div class="section-header">
+                        <h4>📁 Data Management</h4>
+                        <span class="collapse-toggle">▼</span>
+                    </div>
+                    <div class="section-content">
+                        <button id="exportAllData" class="action-btn">Export All SFAF</button>
+                        <button id="importData" class="action-btn secondary">Import CSV</button>
+                        <button id="clearAllData" class="action-btn danger">Clear All Data</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS TAB -->
+            <div id="tab-settings" class="tab-panel">
+                <div class="collapsible-section" data-section="display-settings">
+                    <div class="section-header">
+                        <h4>⚙️ Display Settings</h4>
+                        <span class="collapse-toggle">▼</span>
+                    </div>
+                    <div class="section-content">
+                        <div class="form-row">
+                            <label>
+                                <input type="checkbox" id="showTooltips" checked>
+                                Show marker tooltips
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>
+                                <input type="checkbox" id="showCoordinates" checked>
+                                Show coordinates in tooltips
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label>Coordinate Format:</label>
+                            <select id="coordFormat" class="form-control">
+                                <option value="dms">DMS (40° 42' 46" N)</option>
+                                <option value="compact">Compact DMS (404246N)</option>
+                                <option value="decimal">Decimal (40.7128)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="collapsible-section" data-section="theme-settings">
+                    <div class="section-header">
+                        <h4>🎨 Theme</h4>
+                        <span class="collapse-toggle">▼</span>
+                    </div>
+                    <div class="section-content">
+                        <button id="themeToggle" class="theme-toggle" title="Toggle Dark/Light Mode">
+                            <span class="theme-icon">🌙</span>
+                            <span class="theme-text">Dark</span>
+                        </button>
+                        <div class="form-row">
+                            <label>Map Style:</label>
+                            <select id="mapStyle" class="form-control">
+                                <option value="osm">OpenStreetMap</option>
+                                <option value="satellite">Satellite</option>
+                                <option value="terrain">Terrain</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OBJECT TAB (with collapsible sections) -->
+            <div id="tab-object" class="tab-panel">
+                <div id="objectDetails">
+                    <!-- ADMINISTRATIVE DATA -->
+                    <div class="collapsible-section" data-section="admin-data">
+                        <div class="section-header">
+                            <h4>🔐 Administrative Data</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field005">005 - Security Classification:</label>
+                                <select id="field005" class="form-control" data-field="005">
+                                    <option value="">Select...</option>
+                                    <option value="U">U - Unclassified</option>
+                                    <option value="UE">UE - For Official Use Only</option>
+                                    <option value="C">C - Confidential</option>
+                                    <option value="S">S - Secret</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label for="field010">010 - Type of Action:</label>
+                                <select id="field010" class="form-control" data-field="010">
+                                    <option value="">Select...</option>
+                                    <option value="M">M - Modify</option>
+                                    <option value="N">N - New</option>
+                                    <option value="D">D - Delete</option>
+                                    <option value="R">R - Renew</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label for="field102">102 - Agency Serial Number:</label>
+                                <input type="text" id="field102" class="form-control" data-field="102" maxlength="10"
+                                    placeholder="AF 079243">
+                            </div>
+                            <div class="form-row">
+                                <label for="field701">701 - Frequency Action Officer:</label>
+                                <input type="text" id="field701" class="form-control" data-field="701" maxlength="3"
+                                    placeholder="T01">
+                            </div>
+                            <div class="form-row">
+                                <label for="field702">702 - Control/Request Number:</label>
+                                <input type="text" id="field702" class="form-control" data-field="702" maxlength="15"
+                                    placeholder="AFSOC 2025-202">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EMISSION CHARACTERISTICS -->
+                    <div class="collapsible-section" data-section="emission-chars">
+                        <div class="section-header">
+                            <h4>📡 Emission Characteristics</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div id="frequency-entries">
+                                <div class="dynamic-entry frequency-entry" data-entry="1">
+                                    <div class="entry-header">
+                                        <span class="entry-title">Primary Frequency</span>
+                                        <button class="remove-entry-btn"
+                                            onclick="this.parentElement.parentElement.remove()">✕</button>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field110_1">110 - Frequency(ies):</label>
+                                        <input type="text" id="field110_1" class="form-control"
+                                            placeholder="K4460.5(4459.15)">
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field113_1">113 - Station Class:</label>
+                                        <input type="text" id="field113_1" class="form-control" maxlength="4"
+                                            placeholder="MO">
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field114_1">114 - Emission Designator:</label>
+                                        <input type="text" id="field114_1" class="form-control" maxlength="11"
+                                            placeholder="2K70J3E">
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field115_1">115 - Transmitter Power:</label>
+                                        <input type="text" id="field115_1" class="form-control" maxlength="9"
+                                            placeholder="W500">
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="addFrequencyEntry" class="add-btn">+ Add Frequency Entry</button>
+                        </div>
+                    </div>
+
+                    <!-- TIME/DATE INFORMATION -->
+                    <div class="collapsible-section" data-section="time-date">
+                        <div class="section-header">
+                            <h4>📅 Time/Date Information</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field130">130 - Time:</label>
+                                <input type="text" id="field130" class="form-control" data-field="130" maxlength="4"
+                                    placeholder="3HX">
+                            </div>
+                            <div class="form-row">
+                                <label for="field142">142 - Review Date:</label>
+                                <input type="date" id="field142" class="form-control" data-field="142">
+                            </div>
+                            <div class="form-row">
+                                <label for="field143">143 - Revision Date:</label>
+                                <input type="date" id="field143" class="form-control" data-field="143">
+                            </div>
+                            <div class="form-row">
+                                <label for="field144">144 - Approval Authority:</label>
+                                <select id="field144" class="form-control" data-field="144">
+                                    <option value="">Select...</option>
+                                    <option value="Y">Y - Yes</option>
+                                    <option value="N">N - No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ORGANIZATIONAL INFORMATION -->
+                    <div class="collapsible-section" data-section="org-info">
+                        <div class="section-header">
+                            <h4>🏛️ Organizational Information</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field200">200 - Agency:</label>
+                                <select id="field200" class="form-control" data-field="200">
+                                    <option value="">Select...</option>
+                                    <option value="USAF">USAF</option>
+                                    <option value="USA">USA</option>
+                                    <option value="USN">USN</option>
+                                    <option value="USMC">USMC</option>
+                                    <option value="USCG">USCG</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label for="field201">201 - Unified Command:</label>
+                                <input type="text" id="field201" class="form-control" data-field="201" maxlength="8"
+                                    placeholder="SOCOM">
+                            </div>
+                            <div class="form-row">
+                                <label for="field202">202 - Unified Command Service:</label>
+                                <input type="text" id="field202" class="form-control" data-field="202" maxlength="8"
+                                    placeholder="AFSOC">
+                            </div>
+                            <div class="form-row">
+                                <label for="field204">204 - Command:</label>
+                                <input type="text" id="field204" class="form-control" data-field="204" maxlength="18"
+                                    placeholder="AFSOC">
+                            </div>
+                            <div class="form-row">
+                                <label for="field205">205 - Subcommand:</label>
+                                <input type="text" id="field205" class="form-control" data-field="205" maxlength="18"
+                                    placeholder="AFSOC">
+                            </div>
+                            <div class="form-row">
+                                <label for="field206">206 - Installation Frequency Manager:</label>
+                                <input type="text" id="field206" class="form-control" data-field="206" maxlength="18"
+                                    placeholder="HURLBURT">
+                            </div>
+                            <div class="form-row">
+                                <label for="field207">207 - Operating Unit:</label>
+                                <input type="text" id="field207" class="form-control" data-field="207" maxlength="18"
+                                    placeholder="1SOWEX">
+                            </div>
+                            <div class="form-row">
+                                <label for="field209">209 - Area AFC/DoD AFC:</label>
+                                <input type="text" id="field209" class="form-control" data-field="209" maxlength="18"
+                                    placeholder="GAFC">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TRANSMITTER LOCATION DATA -->
+                    <div class="collapsible-section" data-section="tx-location">
+                        <div class="section-header">
+                            <h4>📍 Transmitter Location</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field300">300 - State/Country:</label>
+                                <input type="text" id="field300" class="form-control" data-field="300" maxlength="4"
+                                    placeholder="FL">
+                            </div>
+                            <div class="form-row">
+                                <label for="field301">301 - Antenna Location:</label>
+                                <input type="text" id="field301" class="form-control" data-field="301" maxlength="24"
+                                    placeholder="HURLBURT">
+                            </div>
+                            <div class="form-row">
+                                <label for="field303">303 - Antenna Coordinates:</label>
+                                <input type="text" id="field303" class="form-control" data-field="303" maxlength="15"
+                                    placeholder="302521N0864150W" readonly>
+                                <small class="field-help">Auto-filled from map marker position</small>
+                            </div>
+                            <div class="form-row">
+                                <label for="field306">306 - Authorized Radius:</label>
+                                <input type="text" id="field306" class="form-control" data-field="306" maxlength="5"
+                                    placeholder="5B">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TRANSMITTER EQUIPMENT -->
+                    <div class="collapsible-section" data-section="tx-equipment">
+                        <div class="section-header">
+                            <h4>🔧 Transmitter Equipment</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div id="equipment-entries">
+                                <div class="dynamic-entry equipment-entry" data-entry="1">
+                                    <div class="entry-header">
+                                        <span class="entry-title">Equipment #1</span>
+                                        <button class="remove-entry-btn"
+                                            onclick="this.parentElement.parentElement.remove()">✕</button>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field340_1">340 - Equipment Nomenclature:</label>
+                                        <input type="text" id="field340_1" class="form-control" maxlength="18"
+                                            placeholder="G,AN/PRC-160(V)">
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field343_1">343 - Equipment Certification ID:</label>
+                                        <input type="text" id="field343_1" class="form-control" maxlength="15"
+                                            placeholder="J/F 12/11171">
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="addEquipmentEntry" class="add-btn">+ Add Equipment Entry</button>
+                        </div>
+                    </div>
+
+                    <!-- TRANSMITTER ANTENNA DATA -->
+                    <div class="collapsible-section" data-section="tx-antenna">
+                        <div class="section-header">
+                            <h4>📡 Transmitter Antenna</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field357">357 - Antenna Gain:</label>
+                                <input type="text" id="field357" class="form-control" data-field="357" maxlength="4"
+                                    placeholder="0">
+                            </div>
+                            <div class="form-row">
+                                <label for="field362">362 - Antenna Orientation:</label>
+                                <input type="text" id="field362" class="form-control" data-field="362" maxlength="3"
+                                    placeholder="ND">
+                            </div>
+                            <div class="form-row">
+                                <label for="field363">363 - Antenna Polarization:</label>
+                                <select id="field363" class="form-control" data-field="363">
+                                    <option value="">Select...</option>
+                                    <option value="V">V - Vertical</option>
+                                    <option value="H">H - Horizontal</option>
+                                    <option value="C">C - Circular</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label for="field373">373 - JSC Area Code:</label>
+                                <select id="field373" class="form-control" data-field="373">
+                                    <option value="">Select...</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RECEIVER LOCATION DATA -->
+                    <div class="collapsible-section" data-section="rx-location">
+                        <div class="section-header">
+                            <h4>📻 Receiver Location</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field400">400 - State/Country:</label>
+                                <input type="text" id="field400" class="form-control" data-field="400" maxlength="4"
+                                    placeholder="FL">
+                            </div>
+                            <div class="form-row">
+                                <label for="field401">401 - Antenna Location:</label>
+                                <input type="text" id="field401" class="form-control" data-field="401" maxlength="24"
+                                    placeholder="HURLBURT">
+                            </div>
+                            <div class="form-row">
+                                <label for="field402">402 - Receiver Control:</label>
+                                <input type="text" id="field402" class="form-control" data-field="402" maxlength="18"
+                                    placeholder="I,DOD-S">
+                            </div>
+                            <div class="form-row">
+                                <label for="field403">403 - Antenna Coordinates:</label>
+                                <input type="text" id="field403" class="form-control" data-field="403" maxlength="15"
+                                    placeholder="302521N0864150W" readonly>
+                                <small class="field-help">Auto-filled from map marker position</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RECEIVER EQUIPMENT -->
+                    <div class="collapsible-section" data-section="rx-equipment">
+                        <div class="section-header">
+                            <h4>📻 Receiver Equipment</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div id="receiver-entries">
+                                <div class="dynamic-entry receiver-entry" data-entry="1">
+                                    <div class="entry-header">
+                                        <span class="entry-title">Receiver #1</span>
+                                        <button class="remove-entry-btn"
+                                            onclick="this.parentElement.parentElement.remove()">✕</button>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field440_1">440 - Equipment Nomenclature:</label>
+                                        <input type="text" id="field440_1" class="form-control" maxlength="18"
+                                            placeholder="G,AN/PRC-160(V)">
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field443_1">443 - Equipment Certification ID:</label>
+                                        <input type="text" id="field443_1" class="form-control" maxlength="15"
+                                            placeholder="J/F 12/11171">
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="addReceiverEntry" class="add-btn">+ Add Receiver Entry</button>
+                        </div>
+                    </div>
+
+                    <!-- RECEIVER ANTENNA DATA -->
+                    <div class="collapsible-section" data-section="rx-antenna">
+                        <div class="section-header">
+                            <h4>📻 Receiver Antenna</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field457">457 - Antenna Gain:</label>
+                                <input type="text" id="field457" class="form-control" data-field="457" maxlength="4"
+                                    placeholder="0">
+                            </div>
+                            <div class="form-row">
+                                <label for="field462">462 - Antenna Orientation:</label>
+                                <input type="text" id="field462" class="form-control" data-field="462" maxlength="3"
+                                    placeholder="ND">
+                            </div>
+                            <div class="form-row">
+                                <label for="field463">463 - Antenna Polarization:</label>
+                                <select id="field463" class="form-control" data-field="463">
+                                    <option value="">Select...</option>
+                                    <option value="V">V - Vertical</option>
+                                    <option value="H">H - Horizontal</option>
+                                    <option value="C">C - Circular</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label for="field473">473 - JSC Area Code:</label>
+                                <select id="field473" class="form-control" data-field="473">
+                                    <option value="">Select...</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUPPLEMENTARY DETAILS -->
+                    <div class="collapsible-section" data-section="supplementary">
+                        <div class="section-header">
+                            <h4>📝 Supplementary Details</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div id="irac-notes-entries">
+                                <div class="dynamic-entry notes-entry" data-entry="1">
+                                    <div class="entry-header">
+                                        <span class="entry-title">IRAC Note #1</span>
+                                        <button class="remove-entry-btn"
+                                            onclick="this.parentElement.parentElement.remove()">✕</button>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field500_1">500 - IRAC Notes:</label>
+                                        <input type="text" id="field500_1" class="form-control" maxlength="4"
+                                            placeholder="C010">
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="addIracNotesEntry" class="add-btn">+ Add IRAC Note</button>
+
+                            <div id="comments-entries">
+                                <div class="dynamic-entry comment-entry" data-entry="1">
+                                    <div class="entry-header">
+                                        <span class="entry-title">Comment #1</span>
+                                        <button class="remove-entry-btn"
+                                            onclick="this.parentElement.parentElement.remove()">✕</button>
+                                    </div>
+                                    <div class="form-row">
+                                        <label for="field501_1">501 - Notes/Comments:</label>
+                                        <input type="text" id="field501_1" class="form-control" maxlength="35"
+                                            placeholder="M015,IRAC 43521/1,SPS 22853/1">
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="addCommentsEntry" class="add-btn">+ Add Comment</button>
+
+                            <div class="form-row">
+                                <label for="field502">502 - Description of Requirement:</label>
+                                <textarea id="field502" class="form-control" data-field="502" rows="4" maxlength="1440"
+                                    placeholder="FREQUENCY IS IN SUPPORT OF MULTIPLE MOBILE CONFIGURATIONS..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <label for="field503">503 - Agency Free-text Comments:</label>
+                                <input type="text" id="field503" class="form-control" data-field="503" maxlength="35"
+                                    placeholder="CARRIER(WINDOW) FREQ 4459.15KHZ">
+                            </div>
+
+                            <div class="form-row">
+                                <label for="field511">511 - Major Function Identifier:</label>
+                                <input type="text" id="field511" class="form-control" data-field="511" maxlength="30"
+                                    placeholder="SUSTAINING OPERATIONS">
+                            </div>
+                            <div class="form-row">
+                                <label for="field512">512 - Intermediate Function Identifier:</label>
+                                <input type="text" id="field512" class="form-control" data-field="512" maxlength="30"
+                                    placeholder="TRAINING">
+                                <div class="form-row">
+                                    <label for="field520">520 - Supplementary Details:</label>
+                                    <textarea id="field520" class="form-control" data-field="520" rows="6"
+                                        maxlength="1080"
+                                        placeholder="FREQUENCY IS IN SUPPORT OF SOF TRAINING OPERATIONS..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OTHER ASSIGNMENT IDENTIFIERS -->
+                    <div class="collapsible-section" data-section="other-identifiers">
+                        <div class="section-header">
+                            <h4>🏷️ Other Assignment Identifiers</h4>
+                            <span class="collapse-toggle">▼</span>
+                        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <label for="field716">716 - Usage Code:</label>
+                                <input type="text" id="field716" class="form-control" data-field="716" maxlength="1"
+                                    placeholder="1">
+                            </div>
+                            <div class="form-row">
+                                <label for="field801">801 - Coordination Data/Remarks:</label>
+                                <input type="text" id="field801" class="form-control" data-field="801" maxlength="60"
+                                    placeholder="JASON CHILES,8508849444,190520">
+                            </div>
+                            <div class="form-row">
+                                <label for="field803">803 - Requestor Data POC:</label>
+                                <input type="text" id="field803" class="form-control" data-field="803" maxlength="60"
+                                    placeholder="JORDAN WHITE,8508842714,191030">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ACTION BUTTONS - Fixed at bottom -->
+                    <div class="sticky-actions">
+                        <div class="sidebar-actions">
+                            <button id="validateSFAFBtn" class="action-btn validate-btn">
+                                🔍 Validate Fields
+                            </button>
+                            <button id="saveSFAFBtn" class="action-btn save-btn">
+                                💾 Save SFAF Data
+                            </button>
+                            <button id="exportSFAFBtn" class="action-btn export-btn">
+                                📤 Export to SFAF
+                            </button>
+                            <button id="deleteSFAFBtn" class="action-btn delete-btn">
+                                🗑️ Delete Object
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GEOMETRY TAB -->
+            <div id="tab-geometry" class="tab-panel">
+                <!-- Subtab Navigation -->
+                <div class="subtab-navigation">
+                    <button class="subtab-btn active" data-subtab="create">➕ Create</button>
+                    <button class="subtab-btn" data-subtab="manage">📋 Manage</button>
+                    <button class="subtab-btn" data-subtab="import">📥 Import</button>
+                    <button class="subtab-btn" data-subtab="help">❓ Help</button>
+                </div>
+
+                <!-- Subtab Content -->
+                <div class="subtab-content">
+                    <!-- CREATE SUBTAB -->
+                    <div id="subtab-create" class="subtab-panel active">
+                        <div class="collapsible-section" data-section="geometry-create">
+                            <div class="section-header">
+                                <h4>📐 Create New Geometry</h4>
+                                <span class="collapse-toggle">▼</span>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-row">
+                                    <label for="geometryType">Type:</label>
+                                    <select id="geometryType" class="form-control">
+                                        <option value="marker">📍 Marker</option>
+                                        <option value="circle">⭕ Circle</option>
+                                        <option value="rectangle">▭ Rectangle</option>
+                                        <option value="polygon">🔷 Polygon</option>
+                                        <option value="polyline">📏 Line</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label for="geometryInput">Coordinates:</label>
+                                    <textarea id="geometryInput" class="form-control" rows="4"
+                                        placeholder="Enter coordinates"></textarea>
+                                    <small class="field-help" id="geometryHelp">
+                                        Enter latitude, longitude coordinates
+                                    </small>
+                                </div>
+                                <!-- Dynamic fields based on geometry type -->
+                                <div id="dynamicGeometryFields">
+                                    <!-- Circle-specific -->
+                                    <div id="circleFields" class="geometry-specific" style="display:none;">
+                                        <div class="form-row">
+                                            <label for="circleRadius">Radius:</label>
+                                            <div style="display: flex; gap: 8px;">
+                                                <input type="number" id="circleRadius" class="form-control"
+                                                    placeholder="1000" step="0.1">
+                                                <select id="circleUnit" class="form-control" style="width: 80px;">
+                                                    <option value="m">meters</option>
+                                                    <option value="km">km</option>
+                                                    <option value="nm">nm</option>
+                                                    <option value="ft">feet</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Polygon-specific -->
+                                    <div id="polygonFields" class="geometry-specific" style="display:none;">
+                                        <div class="form-row">
+                                            <label>
+                                                <input type="checkbox" id="closePolygon" checked>
+                                                Automatically close polygon
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <!-- Style options for all geometries -->
+                                    <div class="form-row">
+                                        <label>Style Options:</label>
+                                        <div class="style-controls">
+                                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                                <label style="flex: 1;">Color:</label>
+                                                <input type="color" id="geometryColor" value="#4CAF50"
+                                                    style="width: 40px; height: 30px;">
+                                            </div>
+                                            <div style="display: flex; gap: 8px;">
+                                                <label style="flex: 1;">Opacity:</label>
+                                                <input type="range" id="geometryOpacity" min="0" max="1" step="0.1"
+                                                    value="0.7" style="flex: 2;">
+                                                <span id="opacityValue">70%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <button id="createGeometryButton" class="action-btn">Create Geometry</button>
+                                    <button id="clearGeometryInput" class="action-btn secondary">Clear Form</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MANAGE SUBTAB -->
+                    <div id="subtab-manage" class="subtab-panel">
+                        <div class="collapsible-section" data-section="geometry-manage">
+                            <div class="section-header">
+                                <h4>📋 Existing Geometries</h4>
+                                <span class="collapse-toggle">▼</span>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-row">
+                                    <label>Filter by Type:</label>
+                                    <select id="geometryFilter" class="form-control">
+                                        <option value="">All Types</option>
+                                        <option value="marker">Markers Only</option>
+                                        <option value="circle">Circles Only</option>
+                                        <option value="rectangle">Rectangles Only</option>
+                                        <option value="polygon">Polygons Only</option>
+                                        <option value="polyline">Lines Only</option>
+                                    </select>
+                                </div>
+                                <div id="geometryList">
+                                    <p class="text-muted">No geometries created yet</p>
+                                </div>
+                                <div class="geometry-actions">
+                                    <button id="selectAllGeometries" class="action-btn secondary">Select All</button>
+                                    <button id="deleteSelectedGeometries" class="action-btn danger">Delete
+                                        Selected</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapsible-section" data-section="geometry-export">
+                            <div class="section-header">
+                                <h4>📤 Export Options</h4>
+                                <span class="collapse-toggle">▼</span>
+                            </div>
+                            <div class="section-content">
+                                <div class="export-controls">
+                                    <button id="exportGeoJSON" class="action-btn">Export as GeoJSON</button>
+                                    <button id="exportKML" class="action-btn secondary">Export as KML</button>
+                                    <button id="exportCSV" class="action-btn secondary">Export as CSV</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- IMPORT SUBTAB -->
+                    <div id="subtab-import" class="subtab-panel">
+                        <div class="collapsible-section" data-section="geometry-import">
+                            <div class="section-header">
+                                <h4>📥 Import Geometries</h4>
+                                <span class="collapse-toggle">▼</span>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-row">
+                                    <label>Import Format:</label>
+                                    <select id="importFormat" class="form-control">
+                                        <option value="csv">CSV File</option>
+                                        <option value="geojson">GeoJSON File</option>
+                                        <option value="kml">KML File</option>
+                                        <option value="text">Text/Coordinates</option>
+                                    </select>
+                                </div>
+                                <div class="form-row">
+                                    <label for="importFile">Select File:</label>
+                                    <input type="file" id="importFile" class="form-control"
+                                        accept=".csv,.json,.kml,.txt">
+                                </div>
+                                <div class="form-row">
+                                    <button id="importGeometries" class="action-btn">Import Geometries</button>
+                                    <button id="previewImport" class="action-btn secondary">Preview First</button>
+                                </div>
+                                <div id="importPreview" style="display:none;">
+                                    <h5>Import Preview:</h5>
+                                    <div id="previewContent"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapsible-section" data-section="bulk-import">
+                            <div class="section-header">
+                                <h4>📋 Bulk Text Import</h4>
+                                <span class="collapse-toggle">▼</span>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-row">
+                                    <label for="bulkTextInput">Paste Coordinates:</label>
+                                    <textarea id="bulkTextInput" class="form-control" rows="6"
+                                        placeholder="Paste multiple coordinates, one per line"></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <button id="processBulkText" class="action-btn">Process Text</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HELP SUBTAB -->
+                    <div id="subtab-help" class="subtab-panel">
+                        <div class="collapsible-section" data-section="coordinate-help">
+                            <div class="section-header">
+                                <h4>❓ Coordinate Format Guide</h4>
+                                <span class="collapse-toggle">▼</span>
+                            </div>
+                            <div class="section-content">
+                                <div class="help-content">
+                                    <div class="format-item">
+                                        <strong>📍 Marker:</strong>
+                                        <code>40.7128, -74.0060</code>
+                                        <p>Single point: latitude, longitude</p>
+                                    </div>
+                                    <div class="format-item">
+                                        <strong>⭕ Circle:</strong>
+                                        <code>40.7128, -74.0060, 1000</code>
+                                        <p>Center point + radius: lat, lng, radius (in meters)</p>
+                                    </div>
+                                    <div class="format-item">
+                                        <strong>▭ Rectangle:</strong>
+                                        <code>40.7128, -74.0060<br>40.7200, -73.9900</code>
+                                        <p>Two corners: Southwest corner, then Northeast corner</p>
+                                    </div>
+                                    <div class="format-item">
+                                        <strong>🔷 Polygon:</strong>
+                                        <code>40.7128, -74.0060<br>40.7200, -74.0060<br>40.7200, -73.9900<br>40.7128, -73.9900</code>
+                                        <p>Multiple points forming a closed shape</p>
+                                    </div>
+                                    <div class="format-item">
+                                        <strong>📏 Line:</strong>
+                                        <code>40.7128, -74.0060<br>40.7200, -73.9900<br>40.7300, -73.9800</code>
+                                        <p>Connected line segments between points</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="collapsible-section" data-section="format-help">
+                            <div class="section-header">
+                                <h4>🎨 Supported Coordinate Formats</h4>
+                                <span class="collapse-toggle">▼</span>
+                            </div>
+                            <div class="section-content">
+                                <div class="help-content">
+                                    <div class="format-item">
+                                        <strong>Decimal Degrees:</strong>
+                                        <code>40.7128, -74.0060</code>
+                                    </div>
+                                    <div class="format-item">
+                                        <strong>DMS (Degrees Minutes Seconds):</strong>
+                                        <code>40°42'46"N, 74°00'22"W</code>
+                                    </div>
+                                    <div class="format-item">
+                                        <strong>Military Grid (MGRS):</strong>
+                                        <code>18TWL8336</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Open Button -->
+<button id="openSidebarBtn" class="floating-open-btn">
+    <span class="sidebar-arrow"></span>
+</button>
+
+<!-- Circle Dialog (for geometry creation) -->
+<div id="circleDialog" class="modal-dialog" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4>Circle Settings</h4>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <label for="circleRadius">Radius:</label>
+                <input type="number" id="circleRadius" class="form-control" min="0.1" step="0.1" placeholder="1"
+                    value="1">
+            </div>
+            <div class="form-row">
+                <label>Unit:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="circleUnit" value="km" checked> Kilometers</label>
+                    <label><input type="radio" name="circleUnit" value="nm"> Nautical Miles</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="circleOk" class="action-btn">OK</button>
+            <button id="circleCancel" class="action-btn secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Sidebar Layout - Fixed Header/Tabs, Scrollable Content */
+    .persistent-sidebar {
+        position: fixed;
+        right: -450px;
+        top: 0;
+        width: 450px;
+        height: 100vh;
+        max-height: 100vh;
+        background: var(--bg-primary);
+        border-left: 1px solid var(--border-color);
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+        transition: right 0.3s ease;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .persistent-sidebar.open {
+        right: 0;
+    }
+
+    /* Fixed Header */
+    .sidebar-header {
+        flex-shrink: 0;
+        padding: 15px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .sidebar-header h3 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1.2em;
+    }
+
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .system-selector {
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        color: var(--text-primary);
+        padding: 5px 8px;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+
+    .header-toggle {
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.2em;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .header-toggle:hover {
+        background: var(--bg-tertiary);
+    }
+
+    /* Fixed Tab Navigation */
+    .tab-navigation {
+        flex-shrink: 0;
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        padding: 12px 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+        font-size: 0.9em;
+        border-bottom: 2px solid transparent;
+    }
+
+    .tab-btn:hover {
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
+        background: var(--bg-primary);
+    }
+
+    /* Scrollable Content Area */
+    .sidebar-content {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .tab-content {
+        height: 100%;
+    }
+
+    .tab-panel {
+        display: none;
+        padding: 0;
+        height: 100%;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    /* Collapsible Sections */
+    .collapsible-section {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-header {
+        padding: 12px 15px;
+        background: var(--bg-secondary);
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.2s;
+        user-select: none;
+    }
+
+    .section-header:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .section-header h4 {
+        margin: 0;
+        color: var(--text-primary);
+        font-size: 1em;
+        font-weight: 600;
+    }
+
+    .collapse-toggle {
+        color: var(--text-secondary);
+        font-size: 0.8em;
+        transition: transform 0.2s;
+    }
+
+    .collapsible-section.collapsed .collapse-toggle {
+        transform: rotate(-90deg);
+    }
+
+    .section-content {
+        padding: 15px;
+        background: var(--bg-primary);
+        transition: max-height 0.3s ease, opacity 0.3s ease;
+        overflow: hidden;
+    }
+
+    .collapsible-section.collapsed .section-content {
+        display: none;
+    }
+
+    /* Form Elements */
+    .form-row {
+        margin-bottom: 15px;
+    }
+
+    .form-row label {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 0.9em;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--input-border);
+        border-radius: 4px;
+        background: var(--input-bg);
+        color: var(--text-primary);
+        font-size: 0.9em;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--accent-color);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .action-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: all 0.2s;
+        margin-right: 8px;
+        margin-bottom: 8px;
+    }
+
+    .action-btn:last-child {
+        margin-right: 0;
+    }
+
+    .action-btn {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .action-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .action-btn.secondary {
+        background: var(--button-secondary);
+        color: var(--text-primary);
+    }
+
+    .action-btn.danger {
+        background: var(--button-danger);
+        color: white;
+    }
+
+    .add-btn {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8em;
+        margin-top: 10px;
+    }
+
+    /* Dynamic Entries */
+    .dynamic-entry {
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        margin-bottom: 15px;
+        background: var(--bg-secondary);
+    }
+
+    .entry-header {
+        padding: 8px 12px;
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .entry-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9em;
+    }
+
+    .remove-entry-btn {
+        background: var(--button-danger);
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 0.8em;
+    }
+
+    .dynamic-entry .form-row {
+        margin: 10px 12px;
+    }
+
+    /* Sticky Actions at bottom of Object tab */
+    .sticky-actions {
+        position: sticky;
+        bottom: 0;
+        background: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        padding: 15px;
+        margin-top: auto;
+    }
+
+    .sidebar-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    /* Subtabs for Geometry */
+    .subtab-navigation {
+        display: flex;
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-color);
+        padding: 0 15px;
+    }
+
+    .subtab-btn {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        padding: 10px 12px;
+        cursor: pointer;
+        font-size: 0.8em;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .subtab-btn:hover {
+        color: var(--text-primary);
+    }
+
+    .subtab-btn.active {
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
+    }
+
+    .subtab-content {
+        flex: 1;
+    }
+
+    .subtab-panel {
+        display: none;
+    }
+
+    .subtab-panel.active {
+        display: block;
+    }
+
+    /* Floating Open Button */
+    .floating-open-btn {
+        position: fixed;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #2196F3;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        width: 40px;
+        height: 60px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        z-index: 1500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .floating-open-btn:hover {
+        background: #1976D2;
+        transform: translateY(-50%) translateX(-2px);
+    }
+
+    .sidebar-arrow {
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-top: 12px solid transparent;
+        border-bottom: 12px solid transparent;
+        border-right: 10px solid currentColor;
+    }
+
+    /* Hide open button when sidebar is open */
+    .persistent-sidebar.open~.floating-open-btn {
+        display: none;
+    }
+
+    /* Circle Dialog Modal */
+    .modal-dialog {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        min-width: 300px;
+    }
+
+    .modal-header {
+        padding: 15px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+    }
+
+    .modal-header h4 {
+        margin: 0;
+        color: var(--text-primary);
+    }
+
+    .modal-body {
+        padding: 20px;
+    }
+
+    .modal-footer {
+        padding: 15px;
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .radio-group {
+        display: flex;
+        gap: 15px;
+    }
+
+    .radio-group label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        cursor: pointer;
+    }
+
+    /* Responsive adjustments */
+    @media (max-height: 600px) {
+        .sidebar-header {
+            padding: 10px;
+        }
+
+        .section-content {
+            padding: 10px;
+        }
+
+        .form-row {
+            margin-bottom: 10px;
+        }
+    }
+
+    /* Help content styling */
+    .help-content {
+        color: var(--text-secondary);
+    }
+
+    .format-item {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+    }
+
+    .format-item strong {
+        color: var(--text-primary);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .format-item code {
+        background: var(--bg-primary);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: monospace;
+        color: var(--accent-color);
+        display: block;
+        margin: 5px 0;
+    }
+
+    .format-item p {
+        margin: 5px 0 0 0;
+        font-size: 0.9em;
+    }
+
+    /* Field help text */
+    .field-help {
+        color: var(--text-muted);
+        font-size: 0.8em;
+        margin-top: 5px;
+        display: block;
+    }
+
+    /* Statistics */
+    .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 10px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+    }
+
+    .stat-label {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 0.8em;
+        margin-bottom: 5px;
+    }
+
+    .stat-value {
+        display: block;
+        color: var(--accent-color);
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .stat-row:last-child {
+        border-bottom: none;
+    }
+</style>
+
+<script>
+    // Collapsible sections functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add click handlers for collapsible sections
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.section-header')) {
+                const header = e.target.closest('.section-header');
+                const section = header.closest('.collapsible-section');
+
+                if (section) {
+                    section.classList.toggle('collapsed');
+
+                    const toggle = header.querySelector('.collapse-toggle');
+                    if (toggle) {
+                        toggle.textContent = section.classList.contains('collapsed') ? '▶' : '▼';
+                    }
+                }
+            }
+        });
+
+        // Initialize all sections as expanded by default
+        document.querySelectorAll('.collapsible-section').forEach(section => {
+            const toggle = section.querySelector('.collapse-toggle');
+            if (toggle) {
+                toggle.textContent = '▼';
+            }
+        });
+
+        // Save collapsed state to localStorage
+        function saveCollapsedState() {
+            const collapsedSections = {};
+            document.querySelectorAll('.collapsible-section').forEach(section => {
+                const sectionId = section.dataset.section;
+                if (sectionId) {
+                    collapsedSections[sectionId] = section.classList.contains('collapsed');
+                }
+            });
+            localStorage.setItem('sidebarCollapsedSections', JSON.stringify(collapsedSections));
+        }
+
+        // Restore collapsed state from localStorage
+        function restoreCollapsedState() {
+            const saved = localStorage.getItem('sidebarCollapsedSections');
+            if (saved) {
+                try {
+                    const collapsedSections = JSON.parse(saved);
+                    Object.keys(collapsedSections).forEach(sectionId => {
+                        const section = document.querySelector(`[data-section="${sectionId}"]`);
+                        if (section && collapsedSections[sectionId]) {
+                            section.classList.add('collapsed');
+                            const toggle = section.querySelector('.collapse-toggle');
+                            if (toggle) {
+                                toggle.textContent = '▶';
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Could not restore collapsed state:', e);
+                }
+            }
+        }
+
+        // Auto-save when sections are toggled
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.section-header')) {
+                setTimeout(saveCollapsedState, 100);
+            }
+        });
+
+        // Restore state after a brief delay to ensure DOM is ready
+        setTimeout(restoreCollapsedState, 100);
+
+        // Smooth scrolling for long forms
+        function scrollToElement(element) {
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'start'
+                });
+            }
+        }
+
+        // Auto-scroll to active sections when they're opened
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.section-header')) {
+                const section = e.target.closest('.collapsible-section');
+                if (section && !section.classList.contains('collapsed')) {
+                    setTimeout(() => scrollToElement(section), 350);
+                }
+            }
+        });
+
+        // Handle form validation visual feedback
+        function addValidationListeners() {
+            document.querySelectorAll('input[required], select[required]').forEach(field => {
+                field.addEventListener('blur', function () {
+                    if (this.value.trim() === '') {
+                        this.style.borderColor = 'var(--button-danger)';
+                    } else {
+                        this.style.borderColor = 'var(--input-border)';
+                    }
+                });
+
+                field.addEventListener('input', function () {
+                    if (this.style.borderColor === 'var(--button-danger)' && this.value.trim() !== '') {
+                        this.style.borderColor = 'var(--input-border)';
+                    }
+                });
+            });
+        }
+
+        // Initialize validation listeners
+        addValidationListeners();
+
+        // Re-initialize when new content is added
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    addValidationListeners();
+                }
+            });
+        });
+
+        observer.observe(document.getElementById('tab-object') || document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Ctrl/Cmd + S to save (prevent default browser save)
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                const saveBtn = document.getElementById('saveSFAFBtn');
+                if (saveBtn && saveBtn.offsetParent !== null) {
+                    saveBtn.click();
+                }
+            }
+
+            // Escape to close sidebar
+            if (e.key === 'Escape') {
+                if (window.persistentSidebar && window.persistentSidebar.isOpen) {
+                    window.persistentSidebar.close();
+                }
+            }
+
+            // Ctrl/Cmd + F to focus filter input
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                const filterInput = document.getElementById('filterLocation');
+                if (filterInput && filterInput.offsetParent !== null) {
+                    e.preventDefault();
+                    filterInput.focus();
+                }
+            }
+        });
+    });
+</script>

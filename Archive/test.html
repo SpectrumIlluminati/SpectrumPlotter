@@ -1,0 +1,47 @@
+// test.html
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Leaflet Live Tooltip Test</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <style>
+    #map { height: 400px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([51.505, -0.09], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    const marker = L.marker([51.505, -0.09], {
+      draggable: true
+    }).addTo(map);
+
+    marker.bindTooltip(
+      `Lat: 51.505<br>Lng: -0.09`,
+      { permanent: true, direction: 'top', offset: L.point(0, -35) }
+    ).openTooltip();
+
+    marker.on('drag', (e) => {
+      const pos = e.latlng;
+      marker.setTooltipContent(
+        `Lat: ${pos.lat.toFixed(4)}<br>Lng: ${pos.lng.toFixed(4)}`
+      );
+      const tt = marker.getTooltip();
+      if (tt) {
+        tt.setLatLng(pos);
+      }
+      console.log('drag event pos =', pos);
+    });
+  </script>
+</body>
+</html>
