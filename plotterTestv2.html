@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Spectrum Plotter Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #circleDialog {
+            background: white !important;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            border: none;
+        }
+
+        #circleDialog h4 {
+            margin: 0 0 8px 0;
+            font-size: 15px;
+        }
+
+        #circleDialog input,
+        #circleDialog label {
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        #circleDialog button {
+            width: 100%;
+            padding: 6px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #circleDialog button:hover {
+            background: #43a047;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100vw;
+            cursor: crosshair !important;
+        }
+
+        #cursor-coordinates {
+            position: absolute;
+            background: black;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            pointer-events: none;
+            z-index: 1000;
+            min-width: 180px;
+            max-width: 180px;
+            overflow: hidden;
+            white-space: nowrap;
+            max-left: 100%;
+            max-right: 100%;
+            transition: left 0.05s ease, top 0.05s ease;
+        }
+
+        #uploadButton {
+            width: 100%;
+            padding: 8px 0;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            margin-bottom: 6px;
+        }
+
+        #uploadButton:hover {
+            background: #1976D2;
+        }
+
+        #exportOptions {
+            position: absolute;
+            bottom: 40px;
+            right: 5px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            font-size: 12px;
+            overflow: hidden;
+        }
+
+        #export-header {
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #f2f2f2;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #export-body {
+            padding: 10px;
+        }
+
+        #exportOptions button {
+            display: block;
+            margin-bottom: 8px;
+            width: 100%;
+            padding: 8px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #exportOptions button:hover {
+            background: #1976D2;
+        }
+
+        #exportOptions.collapsed #export-body {
+            display: none;
+        }
+
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        #legend-header {
+            padding: 8px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #f2f2f2;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #legend-body {
+            padding: 8px 12px;
+        }
+
+        #legend.collapsed #legend-body {
+            display: none;
+        }
+
+        .lock-icon {
+            font-size: 18px;
+            color: red;
+            text-shadow: 1px 1px 2px white;
+        }
+
+        #inputPanel.collapsed #inputPanel-body {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="cursor-coordinates"></div>
+
+    <!-- Export & Upload options -->
+    <div id="exportOptions">
+        <div id="export-header">Data ▾</div>
+        <div id="export-body">
+            <button id="uploadButton">Upload CSV</button>
+            <button id="exportButton">Export CSV</button>
+            <label><input type="checkbox" id="exportImported"> Export Imported</label><br>
+            <label><input type="checkbox" id="exportManual" checked> Export Manual</label><br>
+            <label><input type="checkbox" id="lockFeatures"> Lock Features</label>
+        </div>
+    </div>
+
+    <!-- Geometry Input Panel -->
+    <div id="inputPanel" style="position:absolute;
+	top:300px;
+	left:10px;
+	z-index:1000;
+	background:white;
+	padding:12px;
+	border-radius:8px;
+	box-shadow:0 2px 6px rgba(0,0,0,0.2);
+	width:200px;
+	font-size:14px;">
+
+        <!-- Header to toggle collapse -->
+        <div id="inputPanel-header" style="font-weight:bold;
+		background:#f2f2f2;
+		border-top-left-radius:8px;
+		border-top-right-radius:8px;
+		cursor:pointer;">
+            Add Geometry by Text ▾</div>
+
+        <!-- Body that will collapse -->
+        <div id="inputPanel-body" style="padding:12px;">
+            <select id="geometryType" style="width:100%; margin-bottom:8px;">
+                <option value="marker">Marker</option>
+                <option value="rectangle">Rectangle</option>
+                <option value="polygon">Polygon</option>
+            </select>
+
+            <textarea id="geometryInput" rows="3" style="width:100%"></textarea>
+
+
+            <button id="createGeometryButton" style="width:100%;
+	background:#4CAF50;
+	color:white;
+	border:none;
+	border-radius:4px;
+	padding:8px;
+	cursor:pointer;">
+                Create
+            </button>
+        </div>
+    </div>
+
+
+    <!-- Circle radius input dialog -->
+    <div id="circleDialog" class="leaflet-control"
+        style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:2000; width:220px;">
+        <div style="padding:10px;">
+            <h4 style="margin:0 0 8px 0; font-size:15px;">Circle Options</h4>
+            <label for="circleRadius">Radius:</label>
+            <input type="number" id="circleRadius" value="5" min="0.1" step="0.1" style="width:70px; margin-top:4px;">
+            <br><br>
+            <label><input type="radio" name="circleUnit" value="km" checked> km</label>
+            <label><input type="radio" name="circleUnit" value="nm"> nm</label>
+            <br><br>
+            <button id="circleOk"
+                style="width:100%; padding:6px; border:none; border-radius:4px; background:#4CAF50; color:white; cursor:pointer;">OK</button>
+        </div>
+    </div>
+
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
+
+    <!-- Legend -->
+    <div id="legend">
+        <div id="legend-header">Legend ▾</div>
+        <div id="legend-body">
+            <div><img
+                    src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png"
+                    style="width:15px;vertical-align:middle;"> Manual Marker (Editable)</div>
+            <div><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png"
+                    style="width:15px;vertical-align:middle;"> Imported Marker (Read-only)</div>
+        </div>
+    </div>
+
+    <script src="db/indexeddb-wrapper.js">
+        // db/indexeddb-wrapper.js
+const dbName = "SpectrumDB";
+const storeName = "features";
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName, 1);
+
+        request.onupgradeneeded = function (e) {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(storeName)) {
+                db.createObjectStore(storeName, { keyPath: "id", autoIncrement: true });
+            }
+        };
+
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function addToIndexedDB(data, type) {
+    const db = await openDB();
+    const tx = db.transaction(storeName, "readwrite");
+    const store = tx.objectStore(storeName);
+    await store.add({ ...data, type });
+    await tx.complete;
+}
+    </script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- ✅ Working Path Drag plugin for Leaflet 1.9+ -->
+    <script src="https://github.com/w8r/leaflet-path-drag"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <script>
+        const geometryTypeSelect = document.getElementById("geometryType");
+        const geometryInput = document.getElementById("geometryInput");
+
+        const placeholders = {
+            marker: "e.g.\n30.4300,-86.6950",
+            rectangle: "e.g.\n30.4300,-86.7000; 30.4400,-86.6900",
+            polygon: "e.g.\n30.4300,-86.7000; 30.4350,-86.6950; 30.4320,-86.6850"
+        };
+
+        function updatePlaceholder() {
+            const selectedType = geometryTypeSelect.value;
+            geometryInput.placeholder = placeholders[selectedType] || "Enter coordinates here...";
+        }
+
+        geometryTypeSelect.addEventListener("change", updatePlaceholder);
+
+        // Set initial placeholder on page load
+        updatePlaceholder();
+    </script>
+
+    <script src="https://unpkg.com/leaflet-geometryutil"></script>
+
+    <script>
+        // Define tile layers with English labels
+        const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        });
+        const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        });
+
+        const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        });
+
+        const esriStreets = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, FAO, NOAA, USGS',
+            maxZoom: 19
+        });
+
+        const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+            maxZoom: 19
+        });
+
+        const baseMaps = {
+            "CARTO Light (English)": cartoLight,
+            "CARTO Dark (English)": cartoDark,
+            "Esri Streets (English)": esriStreets,
+            "Esri Satellite (Imagery)": esriSatellite
+        };
+
+        const map = L.map('map', {
+            center: [30.43, -86.695],
+            zoom: 13,
+            layers: [esriSatellite] // Set the default layer
+        });
+
+        const mapDiv = document.getElementById('map');
+        mapDiv.addEventListener('mouseleave', () => {
+            cursorBox.style.display = "none";
+        });
+        mapDiv.addEventListener('mouseenter', () => {
+            cursorBox.style.display = "block";
+        });
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function convertToDMS(decimal) {
+            const isNegative = decimal < 0;
+            const absDecimal = Math.abs(decimal);
+
+            let degrees = Math.floor(absDecimal);
+            let minutesFloat = (absDecimal - degrees) * 60;
+            let minutes = Math.floor(minutesFloat);
+            let seconds = Math.round((minutesFloat - minutes) * 60);
+
+            if (seconds === 60) {
+                seconds = 0;
+                minutes += 1;
+            }
+            if (minutes === 60) {
+                minutes = 0;
+                degrees += 1;
+            }
+
+            const sign = isNegative ? '-' : '';
+            return `${sign}${degrees}°${minutes}'${seconds}"`;
+        }
+
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const manualMarkers = [];
+        const importedMarkers = [];
+        // const circleCenters = {}; // track circle center markers
+
+        const manualIcon = L.icon({
+            iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        const importedIcon = L.icon({
+            iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+            shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        const drawControl = new L.Control.Draw({
+            draw: {
+                marker: true,
+                polygon: true,
+                polyline: false,
+                rectangle: true,
+                circle: true,
+                circlemarker: false
+            },
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            }
+        });
+        map.addControl(drawControl);
+
+        let manualCounter = 1;
+        function generateSerial() {
+            return "FREQ" + String(manualCounter++).padStart(6, "0");
+        }
+        // Track lock overlays
+        const lockOverlays = [];
+        const circleCenters = {}; // you already had this if using draggable circle centers
+
+        // Function to add a lock overlay
+        function addLockOverlay(layer) {
+            let latlng;
+            if (layer.getLatLng) {
+                latlng = layer.getLatLng(); // For markers
+            } else if (layer.getBounds) {
+                latlng = layer.getBounds().getCenter(); // For rectangles/polygons
+            } else if (layer.getLatLngs) {
+                latlng = layer.getCenter(); // Circles
+            }
+            if (!latlng) return;
+
+            const lockIcon = L.divIcon({
+                className: "lock-icon",
+                html: "🔒",
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            const lockMarker = L.marker(latlng, { icon: lockIcon, interactive: false }).addTo(map);
+            lockOverlays.push(lockMarker);
+        }
+
+        // Function to clear lock overlays
+        function clearLockOverlays() {
+            lockOverlays.forEach(marker => map.removeLayer(marker));
+            lockOverlays.length = 0;
+        }
+
+        // Hover handlers for hiding cursor coordinates
+        function attachHoverHandlers(layer) {
+            layer.on("mouseover", () => {
+                cursorBox.style.display = "none";
+            });
+            layer.on("mouseout", () => {
+                cursorBox.style.display = "block";
+            });
+        }
+
+        map.on(L.Draw.Event.CREATED, function (event) {
+            if (event.layerType === 'marker') {
+                const lat = event.layer.getLatLng().lat.toFixed(4);
+                const lng = event.layer.getLatLng().lng.toFixed(4);
+                const latDMS = convertToDMS(event.layer.getLatLng().lat);
+                const lngDMS = convertToDMS(event.layer.getLatLng().lng);
+
+                const serial = generateSerial();
+                const markerData = { lat, lng, frequency: "", notes: "", serial };
+                manualMarkers.push(markerData);
+
+                saveManualMarkerToDB(markerData);
+
+                const markerLayer = L.marker([lat, lng], { icon: manualIcon, draggable: true }).addTo(map);
+                drawnItems.addLayer(markerLayer);
+                attachHoverHandlers(markerLayer);
+
+                markerLayer.bindPopup(createMetadataForm(markerData), { closeOnClick: false });
+                markerLayer.bindTooltip(
+                    `<b>Manual Marker</b><br>DecDeg: ${lat}, ${lng}<br>DMS: ${latDMS}, ${lngDMS}<br>Serial: ${serial}`,
+                    { permanent: true, direction: 'top', offset: L.point(0, -35) }
+                ).openTooltip();
+
+                markerLayer.on("drag", function (e) {
+                    const pos = e.target.getLatLng();
+                    const lat = pos.lat.toFixed(4);
+                    const lng = pos.lng.toFixed(4);
+                    const latDMS = convertToDMS(pos.lat);
+                    const lngDMS = convertToDMS(pos.lng);
+
+                    e.target.setTooltipContent(
+                        `<b>Manual Marker</b><br>DecDeg: ${lat}, ${lng}<br>DMS: ${latDMS}, ${lngDMS}<br>Serial: ${serial}`
+                    );
+
+                    const m = manualMarkers.find(mm => mm.serial === serial);
+                    if (m) {
+                        m.lat = lat;
+                        m.lng = lng;
+                    }
+                    updateManualMarkerInDB(serial, {
+                        lat: pos.lat,
+                        lng: pos.lng
+                    });
+                });
+
+            } else if (event.layerType === 'rectangle') {
+                const layer = event.layer;
+                drawnItems.addLayer(layer);
+                attachHoverHandlers(layer);
+
+                const bounds = layer.getBounds();
+                const center = bounds.getCenter();
+                const area_m2 = L.GeometryUtil.geodesicArea(layer.getLatLngs()[0]);
+                const area_sqmi = (area_m2 / 2.59e6).toFixed(2);
+
+                const latDMS = convertToDMS(center.lat);
+                const lngDMS = convertToDMS(center.lng);
+
+                layer.bindTooltip(
+                    `<b>Rectangle</b><br>Center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}<br>DMS: ${latDMS}, ${lngDMS}<br>Area: ${area_sqmi} sq mi`,
+                    { permanent: true, direction: 'top', offset: L.point(0, -55) }
+                ).openTooltip();
+            } else if (event.layerType === 'circle') {
+                const layer = event.layer;
+                const dialog = document.getElementById("circleDialog");
+                dialog.style.display = "block";
+
+                function confirmRadius() {
+                    const radiusValue = parseFloat(document.getElementById("circleRadius").value) || 1;
+                    const unit = document.querySelector("input[name='circleUnit']:checked").value;
+                    let radiusMeters = unit === "km" ? radiusValue * 1000 : radiusValue * 1852;
+
+                    layer.setRadius(radiusMeters);
+
+                    const color = getRandomColor();
+                    layer.setStyle({ color: color, fillColor: color, fillOpacity: 0.3 });
+
+                    drawnItems.addLayer(layer);
+                    attachHoverHandlers(layer);
+
+                    function updateCircleTooltip() {
+                        const center = layer.getLatLng();
+                        const area_m2 = Math.PI * Math.pow(layer.getRadius(), 2);
+                        const area_sqmi = (area_m2 / 2.59e6).toFixed(2);
+
+                        const radius_km = (layer.getRadius() / 1000).toFixed(2);
+                        const radius_nm = (layer.getRadius() / 1852).toFixed(2);
+
+                        const latDMS = convertToDMS(center.lat);
+                        const lngDMS = convertToDMS(center.lng);
+
+                        layer.bindTooltip(
+                            `<b>Circle</b><br>Center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}<br>DMS: ${latDMS}, ${lngDMS}<br>Radius: ${radius_km} km / ${radius_nm} nm<br>Area: ${area_sqmi} sq mi`,
+                            { permanent: true, direction: 'top', offset: L.point(0, -38) }
+                        ).openTooltip();
+                    }
+
+                    updateCircleTooltip();
+                    layer.on("edit", updateCircleTooltip);
+
+                    // Create draggable center marker
+                    const centerMarker = L.marker(layer.getLatLng(), { draggable: true }).addTo(map);
+                    circleCenters[L.stamp(layer)] = centerMarker;
+
+                    centerMarker.on("drag", (e) => {
+                        layer.setLatLng(e.target.getLatLng());
+                        updateCircleTooltip();
+                    });
+
+                    dialog.style.display = "none";
+                }
+
+                // attach listener only once per circle
+                document.getElementById("circleOk").addEventListener("click", confirmRadius, { once: true });
+            }
+        });
+
+        map.on(L.Draw.Event.DELETED, function (e) {
+            if (document.getElementById("lockFeatures").checked) {
+                // Prevent deletion when locked
+                alert("Features are locked. Unlock to delete.");
+                return;
+            }
+
+            e.layers.eachLayer(function (layer) {
+                const id = L.stamp(layer);
+
+                // If a circle was deleted, remove its marker
+                if (circleCenters[id]) {
+                    map.removeLayer(circleCenters[id]);
+                    delete circleCenters[id];
+                }
+
+                // If a marker was deleted, also remove its circle
+                if (layer._circle) {
+                    map.removeLayer(layer._circle);
+                    delete circleCenters[L.stamp(layer._circle)];
+                }
+            });
+        });
+
+        function createMetadataForm(markerData) {
+            return `
+        <div style="font-size:14px;">
+          <b>Serial:</b> ${markerData.serial}<br>
+          <label>Frequency:</label><br>
+          <input type="text" id="freq-${markerData.serial}" value="${markerData.frequency}" style="width:100%;"><br>
+          <label>Notes:</label><br>
+          <input type="text" id="notes-${markerData.serial}" value="${markerData.notes}" style="width:100%;"><br>
+          <button onclick="saveMetadata('${markerData.serial}')">Save</button>
+        </div>`;
+        }
+
+        function saveMetadata(serial) {
+            const freqInput = document.getElementById(`freq-${serial}`);
+            const notesInput = document.getElementById(`notes-${serial}`);
+            const marker = manualMarkers.find(m => m.serial === serial);
+            if (marker) {
+                marker.frequency = freqInput.value;
+                marker.notes = notesInput.value;
+
+                // Save to database
+                updateManualMarkerInDB(serial, {
+                    frequency: freqInput.value,
+                    notes: notesInput.value
+                });
+
+                alert(`Updated metadata for marker ${serial}`);
+            }
+        }
+
+        document.getElementById("csvFileInput").addEventListener("change", handleFileSelect, false);
+        document.getElementById("uploadButton").addEventListener("click", () => {
+            document.getElementById("csvFileInput").click();
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            Papa.parse(file, { complete: (results) => processCSVData(results.data), header: true });
+        }
+
+        function processCSVData(data) {
+            const newImportedMarkers = [];
+
+            data.forEach((row) => {
+                if (!row['Serial No.'] || !row['Coordinates']) return;
+                const coords = parseCompactDMS(row['Coordinates']);
+                if (!coords) return;
+
+                createImportedMarker(coords.lat, coords.lng, row);
+
+                newImportedMarkers.push({
+                    serial: row['Serial No.'],
+                    lat: coords.lat.toFixed(4),
+                    lng: coords.lng.toFixed(4),
+                    frequency: row['Frequency'] || '',
+                    coordinates_raw: row['Coordinates']
+                });
+            });
+
+            // Save all imported markers to database
+            if (newImportedMarkers.length > 0) {
+                saveImportedMarkersToDB(newImportedMarkers);
+            }
+        }
+
+        function parseDMSPart(part) {
+            let degrees, minutes, seconds, direction;
+            if (part.length === 7) {
+                degrees = parseInt(part.slice(0, 2), 10);
+                minutes = parseInt(part.slice(2, 4), 10);
+                seconds = parseInt(part.slice(4, 6), 10);
+                direction = part.slice(6, 7);
+            } else if (part.length === 8) {
+                degrees = parseInt(part.slice(0, 3), 10);
+                minutes = parseInt(part.slice(3, 5), 10);
+                seconds = parseInt(part.slice(5, 7), 10);
+                direction = part.slice(7, 8);
+            } else return NaN;
+            let decimal = degrees + minutes / 60 + seconds / 3600;
+            if (direction === 'S' || direction === 'W') decimal = -decimal;
+            return decimal;
+        }
+
+        function parseCompactDMS(str) {
+            if (!str || str.length !== 15) return null;
+            const latPart = str.slice(0, 7);
+            const lonPart = str.slice(7, 15);
+            const lat = parseDMSPart(latPart);
+            const lng = parseDMSPart(lonPart);
+            if (isNaN(lat) || isNaN(lng)) return null;
+            return { lat, lng };
+        }
+
+        function createImportedMarker(lat, lng, data) {
+            const latDMS = convertToDMS(lat);
+            const lngDMS = convertToDMS(lng);
+
+            const marker = L.marker([lat, lng], { icon: importedIcon }).addTo(map).bindTooltip(
+                `<b>Imported Marker</b><br>DecDeg: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>DMS: ${latDMS}, ${lngDMS}<br>Frequency: ${data['Frequency']}<br>Serial No: ${data['Serial No.']}`,
+                { permanent: true, direction: 'top', offset: L.point(0, -35) }
+            ).openTooltip();
+
+            attachHoverHandlers(marker);
+
+            importedMarkers.push({
+                lat: lat.toFixed(4),
+                lng: lng.toFixed(4),
+                frequency: data['Frequency'] || "",
+                serial: data['Serial No.'] || ""
+            });
+        }
+        document.getElementById("createGeometryButton").addEventListener("click", () => {
+            const type = document.getElementById("geometryType").value;
+            const input = document.getElementById("geometryInput").value.trim().toUpperCase();
+
+            if (!input) {
+                alert("Please enter coordinate(s).");
+                return;
+            }
+
+            try {
+                const coordPairs = input
+                    .split(";")
+                    .map(pair => pair.trim())
+                    .filter(pair => pair.length > 0)
+                    .map((coordStr, idx) => {
+                        // Check for decimal degree format: "lat,lng"
+                        if (coordStr.includes(",") && coordStr.match(/[.\d]/)) {
+                            const [latStr, lngStr] = coordStr.split(",");
+                            const lat = parseFloat(latStr);
+                            const lng = parseFloat(lngStr);
+                            if (isNaN(lat) || isNaN(lng)) {
+                                throw new Error(`Invalid decimal degree coordinate at index ${idx + 1}: "${coordStr}"`);
+                            }
+                            return [lat, lng];
+                        }
+
+                        // Try compact DMS: "304538N0830919W"
+                        const trimmed = coordStr.replace(/\s+/g, ""); // remove internal spaces
+                        if (trimmed.length !== 15) {
+                            throw new Error(`Invalid DMS format at index ${idx + 1}: "${coordStr}" (expected 15 characters)`);
+                        }
+
+                        const parsed = parseCompactDMS(trimmed);
+                        if (!parsed) {
+                            throw new Error(`Failed to parse compact DMS at index ${idx + 1}: "${coordStr}"`);
+                        }
+
+                        return [parsed.lat, parsed.lng];
+                    });
+
+
+
+                if (type === "marker") {
+                    if (coordPairs.length !== 1) throw new Error("Marker requires exactly one coordinate.");
+                    const [lat, lng] = coordPairs[0];
+                    const serial = generateSerial();
+
+                    const markerData = { lat: lat.toFixed(4), lng: lng.toFixed(4), frequency: "", notes: "", serial };
+                    manualMarkers.push(markerData);
+
+                    saveManualMarkerToDB(markerData);
+
+                    const marker = L.marker([lat, lng], { icon: manualIcon, draggable: true }).addTo(map);
+                    attachHoverHandlers(marker);
+                    drawnItems.addLayer(marker);
+
+                    marker.bindPopup(createMetadataForm(markerData), { closeOnClick: false });
+                    marker.bindTooltip(
+                        `<b>Manual Marker</b><br>DecDeg: ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>DMS: ${convertToDMS(lat)}, ${convertToDMS(lng)}<br>Serial: ${serial}`,
+                        { permanent: true, direction: 'top', offset: L.point(0, -35) }
+                    ).openTooltip();
+
+                    marker.on("drag", function (e) {
+                        const pos = e.target.getLatLng();
+                        const m = manualMarkers.find(mm => mm.serial === serial);
+                        if (m) {
+                            m.lat = pos.lat.toFixed(4);
+                            m.lng = pos.lng.toFixed(4);
+                            updateManualMarkerInDB(serial, { lat: pos.lat, lng: pos.lng });
+                            e.target.setTooltipContent(
+                                `<b>Manual Marker</b><br>DecDeg: ${m.lat}, ${m.lng}<br>DMS: ${convertToDMS(pos.lat)}, ${convertToDMS(pos.lng)}<br>Serial: ${serial}`
+                            );
+                        }
+                    });
+
+                } else if (type === "rectangle") {
+                    if (coordPairs.length !== 2) throw new Error("Rectangle requires exactly two coordinates (opposite corners).");
+                    const rectangle = L.rectangle([coordPairs[0], coordPairs[1]], { color: getRandomColor(), weight: 2 }).addTo(map);
+                    attachHoverHandlers(rectangle);
+                    drawnItems.addLayer(rectangle);
+
+                    const bounds = rectangle.getBounds();
+                    const tooltipLatLng = bounds.getCenter();  // or getNorthwest(), or a corner
+                    rectangle.bindTooltip(
+                        `<b>Rectangle</b><br>Bounds:<br>${bounds.getSouthWest().lat.toFixed(4)}, ${bounds.getSouthWest().lng.toFixed(4)}<br>to<br>${bounds.getNorthEast().lat.toFixed(4)}, ${bounds.getNorthEast().lng.toFixed(4)}`,
+                        { permanent: true, direction: 'top', offset: L.point(0, -20) }
+                    ).setLatLng(tooltipLatLng).openTooltip();
+
+                    // ADD THESE LINES:
+                    const rectangleCoords = `${coordPairs[0][0]},${coordPairs[0][1]};${coordPairs[1][0]},${coordPairs[1][1]}`;
+                    const rectangleId = L.stamp(rectangle); // Get unique ID for the rectangle
+                    saveGeometryToDB("rectangle", rectangleCoords, { id: rectangleId }, rectangle.options.color);
+
+
+                } else if (type === "polygon") {
+                    if (coordPairs.length < 3) throw new Error("Polygon requires at least three coordinates.");
+
+                    const polygon = L.polygon(coordPairs, { color: getRandomColor(), weight: 2 }).addTo(map);
+                    attachHoverHandlers(polygon);
+                    drawnItems.addLayer(polygon);
+
+                    // Calculate area
+                    const area_m2 = L.GeometryUtil.geodesicArea(polygon.getLatLngs()[0]);
+                    const area_sqmi = (area_m2 / 2.59e6).toFixed(2);
+
+                    const coordsText = coordPairs.map(pair => `${pair[0].toFixed(4)}, ${pair[1].toFixed(4)}`).join('<br>');
+                    const center = polygon.getBounds().getCenter();
+
+                    polygon.bindTooltip(
+                        `<b>Polygon</b><br>Center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}<br>Area: ${area_sqmi} sq mi<br>Vertices:<br>${coordsText}`,
+                        { permanent: true, direction: 'top', offset: L.point(0, -20) }
+                    ).setLatLng(center).openTooltip();
+
+                    // Save to database
+                    const polygonCoords = coordPairs.map(pair => `${pair[0]},${pair[1]}`).join(';');
+                    const polygonId = L.stamp(polygon);
+                    saveGeometryToDB("polygon", polygonCoords, { id: polygonId }, polygon.options.color);
+                }
+
+                // Clear input after successful creation
+                document.getElementById("geometryInput").value = "";
+
+            } catch (error) {
+                alert("Error creating geometry: " + error.message);
+            }
+        });
+
+        const center = polygon.getBounds().getCenter();
+        const tooltip = L.tooltip({
+            permanent: true,
+            direction: 'top',
+            offset: L.point(0, -20)
+        })
+            .setContent(`<b>Polygon</b><br>Center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}<br>Area: ${area_sqmi} sq mi`)
+            .setLatLng(center);
+
+        polygon.bindTooltip(tooltip).openTooltip();
+
+
+        function exportMarkersToCSV() {
+            const includeImported = document.getElementById("exportImported").checked;
+            const includeManual = document.getElementById("exportManual").checked;
+            if (!includeImported && !includeManual) {
+                alert("Please select at least one marker type to export.");
+                return;
+            }
+            let rows = [];
+            let headers = ["Type", "Latitude", "Longitude", "Frequency", "Serial No.", "Notes"];
+            if (includeManual) {
+                manualMarkers.forEach(m => {
+                    rows.push(["Manual", m.lat, m.lng, m.frequency || "", m.serial, m.notes || ""]);
+                });
+            }
+            if (includeImported) {
+                importedMarkers.forEach(m => {
+                    rows.push(["Imported", m.lat, m.lng, m.frequency || "", m.serial, ""]);
+                });
+            }
+            if (rows.length === 0) {
+                alert("No markers available to export.");
+                return;
+            }
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "markers_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        document.getElementById("exportButton").addEventListener("click", exportMarkersToCSV);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Legend toggle
+            document.getElementById("legend-header").addEventListener("click", () => {
+                const legend = document.getElementById("legend");
+                legend.classList.toggle("collapsed");
+                const header = document.getElementById("legend-header");
+                header.textContent = legend.classList.contains("collapsed") ? "Legend ▸" : "Legend ▾";
+            });
+
+            document.getElementById("export-header").addEventListener("click", () => {
+                const panel = document.getElementById("exportOptions");
+                panel.classList.toggle("collapsed");
+                const header = document.getElementById("export-header");
+                header.textContent = panel.classList.contains("collapsed") ? "Data ▸" : "Data ▾";
+            });
+        });
+
+        document.getElementById("lockFeatures").addEventListener("change", (e) => {
+            if (e.target.checked) {
+                // Disable editing/deleting
+                map.removeControl(drawControl);
+
+                drawnItems.eachLayer(layer => {
+                    if (layer instanceof L.Marker && layer.dragging) {
+                        layer.dragging.disable();
+                    }
+                    if (circleCenters[layer._leaflet_id]) {
+                        circleCenters[layer._leaflet_id].dragging.disable();
+                    }
+                });
+
+                // Input panel toggle
+                document.getElementById("inputPanel-header").addEventListener("click", () => {
+                    const panel = document.getElementById("inputPanel");
+                    panel.classList.toggle("collapsed");
+                    const header = document.getElementById("inputPanel-header");
+                    header.textContent = panel.classList.contains("collapsed") ? "Add Geometry by Text ▸" : "Add Geometry by Text ▾";
+                });
+
+                addLockOverlaysToAll(); // optional: place 🔒 icons
+            } else {
+                // Enable editing/deleting
+                map.addControl(drawControl);
+
+                drawnItems.eachLayer(layer => {
+                    if (layer instanceof L.Marker && layer.dragging) {
+                        layer.dragging.enable();
+                    }
+                    if (circleCenters[layer._leaflet_id]) {
+                        circleCenters[layer._leaflet_id].dragging.enable();
+                    }
+                });
+
+                clearLockOverlays();
+            }
+        });
+
+        function convertToCompactDMS(lat, lng) {
+            function toCompactDMS(decimal, isLongitude) {
+                const isNegative = decimal < 0;
+                const absDecimal = Math.abs(decimal);
+
+                const degrees = Math.floor(absDecimal);
+                const minutesFloat = (absDecimal - degrees) * 60;
+                const minutes = Math.floor(minutesFloat);
+                const seconds = Math.floor((minutesFloat - minutes) * 60);
+
+                const direction = isLongitude
+                    ? (isNegative ? 'W' : 'E')
+                    : (isNegative ? 'S' : 'N');
+
+                if (isLongitude) {
+                    return `${degrees.toString().padStart(3, '0')}${minutes.toString().padStart(2, '0')}${seconds.toString().padStart(2, '0')}${direction}`;
+                } else {
+                    return `${degrees.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}${seconds.toString().padStart(2, '0')}${direction}`;
+                }
+            }
+
+            return toCompactDMS(lat, false) + toCompactDMS(lng, true);
+        }
+
+        function exportDataFromDB(includeManual = true, includeImported = true) {
+            if (!isDBReady) {
+                alert("Database not ready");
+                return;
+            }
+
+            try {
+                const data = [];
+
+                if (includeManual) {
+                    const manualResult = db.exec('SELECT serial, lat, lng, frequency, notes FROM manual_markers');
+                    if (manualResult.length > 0) {
+                        manualResult[0].values.forEach(row => {
+                            const [serial, lat, lng, frequency, notes] = row;
+                            data.push({
+                                "Serial No.": serial,
+                                "Coordinates": convertToCompactDMS(lat, lng),
+                                "Frequency": frequency || "",
+                                "Notes": notes || "",
+                                "Type": "Manual"
+                            });
+                        });
+                    }
+                }
+
+                if (includeImported) {
+                    const importedResult = db.exec('SELECT serial, lat, lng, frequency FROM imported_markers');
+                    if (importedResult.length > 0) {
+                        importedResult[0].values.forEach(row => {
+                            const [serial, lat, lng, frequency] = row;
+                            data.push({
+                                "Serial No.": serial,
+                                "Coordinates": convertToCompactDMS(lat, lng),
+                                "Frequency": frequency || "",
+                                "Notes": "",
+                                "Type": "Imported"
+                            });
+                        });
+                    }
+                }
+
+                if (data.length === 0) {
+                    alert("No data to export based on selected filters.");
+                    return;
+                }
+
+                // Convert data to CSV format using Papa Parse
+                const csv = Papa.unparse(data, { header: true });
+
+                // Create and trigger download
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `spectrum_plotter_export_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                console.log(`Exported ${data.length} records to CSV`);
+
+            } catch (error) {
+                console.error("Error exporting data from database:", error);
+                alert("Error exporting data: " + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

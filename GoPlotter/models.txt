@@ -1,0 +1,239 @@
+// models/coordinates_model.go
+package models
+
+type Coordinate struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
+type DMSCoordinate struct {
+	Degrees   int     `json:"degrees"`
+	Minutes   int     `json:"minutes"`
+	Seconds   float64 `json:"seconds"`
+	Direction string  `json:"direction"`
+}
+
+type CoordinateResponse struct {
+	Decimal string `json:"decimal"`
+	DMS     string `json:"dms"`
+	Compact string `json:"compact"`
+}
+// models/geometry_model.go
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type GeometryType string
+
+const (
+	GeometryTypeCircle    GeometryType = "circle"
+	GeometryTypePolygon   GeometryType = "polygon"
+	GeometryTypeRectangle GeometryType = "rectangle"
+)
+
+type Geometry struct {
+	ID        uuid.UUID    `json:"id" db:"id"`
+	Type      GeometryType `json:"type" db:"type"`
+	Serial    string       `json:"serial" db:"serial"`
+	Color     string       `json:"color" db:"color"`
+	CreatedAt time.Time    `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at" db:"updated_at"`
+
+	// Center marker (all geometries have one)
+	Latitude  float64 `json:"lat" db:"latitude"`
+	Longitude float64 `json:"lng" db:"longitude"`
+
+	// Type-specific properties
+	CircleProps    *CircleGeometry    `json:"circle_properties,omitempty"`
+	PolygonProps   *PolygonGeometry   `json:"polygon_properties,omitempty"`
+	RectangleProps *RectangleGeometry `json:"rectangle_properties,omitempty"`
+}
+
+type CircleGeometry struct {
+	Radius   float64 `json:"radius"`    // in meters
+	RadiusKm float64 `json:"radius_km"` // in kilometers
+	RadiusNm float64 `json:"radius_nm"` // in nautical miles
+	Area     float64 `json:"area"`      // in square miles
+	Unit     string  `json:"unit"`      // "km" or "nm"
+}
+
+type PolygonGeometry struct {
+	Points   []Coordinate `json:"points"`
+	Vertices int          `json:"vertices"`
+	Area     float64      `json:"area"` // in square miles
+}
+
+type RectangleGeometry struct {
+	Bounds []Coordinate `json:"bounds"` // [SW, NE]
+	Area   float64      `json:"area"`   // in square miles
+}
+
+// Create requests
+type CreateCircleRequest struct {
+	Lat       float64 `json:"lat" binding:"required"`
+	Lng       float64 `json:"lng" binding:"required"`
+	Radius    float64 `json:"radius" binding:"required"`
+	Unit      string  `json:"unit"` // "km" or "nm", defaults to "km"
+	Color     string  `json:"color"`
+	Frequency string  `json:"frequency"`
+	Notes     string  `json:"notes"`
+}
+
+type CreatePolygonRequest struct {
+	Points    []Coordinate `json:"points" binding:"required"`
+	Color     string       `json:"color"`
+	Frequency string       `json:"frequency"`
+	Notes     string       `json:"notes"`
+}
+
+type CreateRectangleRequest struct {
+	SouthWest Coordinate `json:"south_west" binding:"required"`
+	NorthEast Coordinate `json:"north_east" binding:"required"`
+	Color     string     `json:"color"`
+	Frequency string     `json:"frequency"`
+	Notes     string     `json:"notes"`
+}
+// models/marker_models.go
+package models
+
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+)
+
+type Marker struct {
+	ID          uuid.UUID             `json:"id" db:"id"`
+	Serial      string                `json:"serial" db:"serial"`
+	Latitude    float64               `json:"lat" db:"latitude"`
+	Longitude   float64               `json:"lng" db:"longitude"`
+	Frequency   string                `json:"frequency" db:"frequency"`
+	Notes       string                `json:"notes" db:"notes"`
+	MarkerType  string                `json:"type" db:"marker_type"`
+	IsDraggable bool                  `json:"is_draggable" db:"is_draggable"`
+	CreatedAt   time.Time             `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at" db:"updated_at"`
+	IRACNotes   []IRACNoteAssociation `json:"irac_notes,omitempty"`
+	SFAFFields  []SFAFField           `json:"sfaf_fields,omitempty"`
+}
+
+type IRACNote struct {
+	Code           string          `json:"code" db:"code"`
+	Title          string          `json:"title" db:"title"`
+	Description    string          `json:"description" db:"description"`
+	Category       string          `json:"category" db:"category"`
+	FieldPlacement int             `json:"field_placement" db:"field_placement"`
+	Agency         pq.StringArray  `json:"agency" db:"agency"`
+	TechnicalSpecs json.RawMessage `json:"technical_specs" db:"technical_specs"`
+	CreatedAt      time.Time       `json:"created_at" db:"created_at"`
+}
+
+type IRACNoteAssociation struct {
+	ID               uuid.UUID `json:"id" db:"id"`
+	MarkerID         uuid.UUID `json:"marker_id" db:"marker_id"`
+	IRACNoteCode     string    `json:"irac_note_code" db:"irac_note_code"`
+	FieldNumber      int       `json:"field_number" db:"field_number"`
+	OccurrenceNumber int       `json:"occurrence_number" db:"occurrence_number"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	IRACNote         *IRACNote `json:"irac_note,omitempty"`
+}
+
+type SFAFField struct {
+	ID               uuid.UUID `json:"id" db:"id"`
+	MarkerID         uuid.UUID `json:"marker_id" db:"marker_id"`
+	FieldNumber      string    `json:"field_number" db:"field_number"`
+	FieldValue       string    `json:"field_value" db:"field_value"`
+	OccurrenceNumber int       `json:"occurrence_number" db:"occurrence_number"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+}
+
+// Request/Response models for API
+type CreateMarkerRequest struct {
+	Latitude   float64 `json:"lat" binding:"required"`
+	Longitude  float64 `json:"lng" binding:"required"`
+	Frequency  string  `json:"frequency"`
+	Notes      string  `json:"notes"`
+	MarkerType string  `json:"type"`
+}
+
+type UpdateMarkerRequest struct {
+	Latitude    *float64 `json:"lat,omitempty"`
+	Longitude   *float64 `json:"lng,omitempty"`
+	Frequency   *string  `json:"frequency,omitempty"`
+	Notes       *string  `json:"notes,omitempty"`
+	MarkerType  *string  `json:"type,omitempty"`
+	IsDraggable *bool    `json:"is_draggable,omitempty"`
+}
+
+type MarkerResponse struct {
+	Success bool    `json:"success"`
+	Message string  `json:"message"`
+	Marker  *Marker `json:"marker,omitempty"`
+}
+
+type MarkersResponse struct {
+	Success bool     `json:"success"`
+	Message string   `json:"message"`
+	Markers []Marker `json:"markers,omitempty"`
+}
+// models/sfaf_model.go
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type SFAF struct {
+	ID        uuid.UUID         `json:"id"`
+	MarkerID  uuid.UUID         `json:"marker_id"`
+	Fields    map[string]string `json:"fields"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
+}
+
+type SFAFFormDefinition struct {
+	FieldNumber string   `json:"field_number"`
+	Label       string   `json:"label"`
+	Required    bool     `json:"required"`
+	FieldType   string   `json:"field_type"`
+	Options     []string `json:"options,omitempty"`
+	Validation  string   `json:"validation,omitempty"`
+	Help        string   `json:"help,omitempty"`
+}
+
+// Request/Response types
+type CreateSFAFRequest struct {
+	MarkerID string            `json:"marker_id" binding:"required"`
+	Fields   map[string]string `json:"fields"`
+}
+
+type UpdateSFAFRequest struct {
+	Fields map[string]string `json:"fields" binding:"required"`
+}
+
+type ValidateSFAFRequest struct {
+	Fields map[string]string `json:"fields" binding:"required"`
+}
+
+type ValidationResult struct {
+	IsValid bool                          `json:"is_valid"`
+	Errors  map[string]string             `json:"errors,omitempty"`
+	Fields  map[string]SFAFFormDefinition `json:"fields"`
+}
+
+// Export format
+type SFAFExportFormat string
+
+const (
+	SFAFExportCSV  SFAFExportFormat = "csv"
+	SFAFExportJSON SFAFExportFormat = "json"
+	SFAFExportXML  SFAFExportFormat = "xml"
+)

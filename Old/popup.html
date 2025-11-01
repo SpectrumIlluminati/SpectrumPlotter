@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+     <head>
+          <base target="_top" />
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+          <title>SFAF Plotter - Leaflet</title>
+
+          <link
+               rel="icon"
+               type="image/png"
+               sizes="192x192"
+               href="Spectrum Wizard Badge.PNG"
+          />
+
+          <link
+               rel="stylesheet"
+               href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+               integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+               crossorigin=""
+          />
+          <script
+               src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+               integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+               crossorigin=""
+          ></script>
+
+          <style>
+               html,
+               body {
+                    height: 100%;
+                    margin: 0;
+               }
+               .leaflet-container {
+                    position: absolute;
+                    height: 400px;
+                    width: 600px;
+                    max-width: 100%;
+                    max-height: 95%;
+                    bottom: 0px;
+               }
+               #instructions {
+                    position: absolute;
+                    left: 0px;
+               }
+               #right-side {
+                    position: absolute;
+                    right: 0px;
+               }
+          </style>
+     </head>
+     <body>
+          <div id="instructions" style="width: 50%; height: 100%">
+               Click on the map to add a marker and provide info.
+          </div>
+
+          <div id="right-side" style="width: 50%; height: 100%">
+               What's over here
+          </div>
+
+          <div id="map" style="width: 100%; height: 100%"></div>
+          <script>
+          
+let map, popup, Popup;
+
+/** Initializes the map and the custom popup. */
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: -33.9, lng: 151.1 },
+    zoom: 10,
+  });
+  /**
+   * A customized popup on the map.
+   */
+  class Popup extends google.maps.OverlayView {
+    position;
+    containerDiv;
+    constructor(position, content) {
+      super();
+      this.position = position;
+      content.classList.add("popup-bubble");
+
+      // This zero-height div is positioned at the bottom of the bubble.
+      const bubbleAnchor = document.createElement("div");
+
+      bubbleAnchor.classList.add("popup-bubble-anchor");
+      bubbleAnchor.appendChild(content);
+      // This zero-height div is positioned at the bottom of the tip.
+      this.containerDiv = document.createElement("div");
+      this.containerDiv.classList.add("popup-container");
+      this.containerDiv.appendChild(bubbleAnchor);
+      // Optionally stop clicks, etc., from bubbling up to the map.
+      Popup.preventMapHitsAndGesturesFrom(this.containerDiv);
+    }
+    /** Called when the popup is added to the map. */
+    onAdd() {
+      this.getPanes().floatPane.appendChild(this.containerDiv);
+    }
+    /** Called when the popup is removed from the map. */
+    onRemove() {
+      if (this.containerDiv.parentElement) {
+        this.containerDiv.parentElement.removeChild(this.containerDiv);
+      }
+    }
+    /** Called each frame when the popup needs to draw itself. */
+    draw() {
+      const divPosition = this.getProjection().fromLatLngToDivPixel(
+        this.position,
+      );
+      // Hide the popup when it is far out of view.
+      const display =
+        Math.abs(divPosition.x) < 4000 && Math.abs(divPosition.y) < 4000
+          ? "block"
+          : "none";
+
+      if (display === "block") {
+        this.containerDiv.style.left = divPosition.x + "px";
+        this.containerDiv.style.top = divPosition.y + "px";
+      }
+
+      if (this.containerDiv.style.display !== display) {
+        this.containerDiv.style.display = display;
+      }
+    }
+  }
+
+  popup = new Popup(
+    new google.maps.LatLng(-33.866, 151.196),
+    document.getElementById("content"),
+  );
+  popup.setMap(map);
+}
+
+window.initMap = initMap;

@@ -1,0 +1,217 @@
+// repositories/marker_repository.go
+package repositories
+
+import (
+	"fmt"
+	"sfaf-plotter/models"
+	"strings"
+
+	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+)
+
+type MarkerRepository struct {
+	db *sqlx.DB
+}
+
+func NewMarkerRepository(db *sqlx.DB) *MarkerRepository {
+	return &MarkerRepository{db: db}
+}
+
+func (r *MarkerRepository) Create(marker *models.Marker) error {
+	query := `
+        INSERT INTO markers (id, serial, latitude, longitude, frequency, notes, marker_type, is_draggable)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING created_at, updated_at`
+
+	err := r.db.QueryRow(query,
+		marker.ID, marker.Serial, marker.Latitude, marker.Longitude,
+		marker.Frequency, marker.Notes, marker.MarkerType, marker.IsDraggable,
+	).Scan(&marker.CreatedAt, &marker.UpdatedAt)
+
+	return err
+}
+
+func (r *MarkerRepository) GetAll() ([]models.Marker, error) {
+	query := `
+        SELECT id, serial, latitude, longitude, frequency, notes, 
+               marker_type, is_draggable, created_at, updated_at
+        FROM markers
+        ORDER BY created_at DESC`
+
+	var markers []models.Marker
+	err := r.db.Select(&markers, query)
+	return markers, err
+}
+
+// Repository method building dynamic UPDATE queries
+func (r *MarkerRepository) buildUpdateClause(req models.UpdateMarkerRequest) []string {
+	var setParts []string
+
+	// Static timestamp (no formatting needed)
+	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
+
+	// Dynamic fields (fmt.Sprintf appropriate when needed)
+	if req.Latitude != nil {
+		setParts = append(setParts, fmt.Sprintf("latitude = %f", *req.Latitude))
+	}
+
+	if req.Longitude != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("longitude = %f", *req.Longitude))
+	}
+
+	if req.Frequency != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("frequency = %s", pq.QuoteLiteral(*req.Frequency)))
+	}
+
+	if req.Notes != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("notes = %s", pq.QuoteLiteral(*req.Notes)))
+	}
+
+	if req.MarkerType != nil {
+		setParts = append(setParts, fmt.Sprintf("marker_type = %s", pq.QuoteLiteral(*req.MarkerType)))
+	}
+
+	if req.IsDraggable != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("is_draggable = %t", *req.IsDraggable))
+	}
+
+	return setParts
+}
+
+func (r *MarkerRepository) GetByID(id uuid.UUID) (*models.Marker, error) {
+	query := `
+        SELECT id, serial, latitude, longitude, frequency, notes,
+               marker_type, is_draggable, created_at, updated_at
+        FROM markers
+        WHERE id = $1`
+
+	var marker models.Marker
+	err := r.db.Get(&marker, query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load associated IRAC notes
+	marker.IRACNotes, err = r.getIRACNotesByMarkerID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load associated SFAF fields
+	marker.SFAFFields, err = r.getSFAFFieldsByMarkerID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &marker, nil
+}
+
+func (r *MarkerRepository) Update(id uuid.UUID, updates map[string]interface{}) error {
+	setParts := []string{}
+	args := []interface{}{}
+	argIndex := 1
+
+	for field, value := range updates {
+		setParts = append(setParts, fmt.Sprintf("%s = $%d", field, argIndex))
+		args = append(args, value)
+		argIndex++
+	}
+
+	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
+
+	query := fmt.Sprintf(`
+        UPDATE markers
+        SET %s
+        WHERE id = $%d`,
+		strings.Join(setParts, ", "), argIndex)
+
+	args = append(args, id)
+
+	_, err := r.db.Exec(query, args...)
+	return err
+}
+
+func (r *MarkerRepository) Delete(id uuid.UUID) error {
+	query := `DELETE FROM markers WHERE id = $1`
+	_, err := r.db.Exec(query, id)
+	return err
+}
+
+func (r *MarkerRepository) DeleteAll() error {
+	query := `DELETE FROM markers`
+	_, err := r.db.Exec(query)
+	return err
+}
+
+// Helper methods for IRAC notes and SFAF fields
+func (r *MarkerRepository) getIRACNotesByMarkerID(markerID uuid.UUID) ([]models.IRACNoteAssociation, error) {
+	query := `
+        SELECT mia.id, mia.marker_id, mia.irac_note_code, mia.field_number, 
+               mia.occurrence_number, mia.created_at,
+               in_.code, in_.title, in_.description, in_.category, 
+               in_.field_placement, in_.agency, in_.technical_specs
+        FROM marker_irac_notes mia
+        JOIN irac_notes in_ ON mia.irac_note_code = in_.code
+        WHERE mia.marker_id = $1
+        ORDER BY mia.field_number, mia.occurrence_number`
+
+	rows, err := r.db.Query(query, markerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var associations []models.IRACNoteAssociation
+	for rows.Next() {
+		var assoc models.IRACNoteAssociation
+		var note models.IRACNote
+
+		err := rows.Scan(
+			&assoc.ID, &assoc.MarkerID, &assoc.IRACNoteCode,
+			&assoc.FieldNumber, &assoc.OccurrenceNumber, &assoc.CreatedAt,
+			&note.Code, &note.Title, &note.Description, &note.Category,
+			&note.FieldPlacement, &note.Agency, &note.TechnicalSpecs,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		assoc.IRACNote = &note
+		associations = append(associations, assoc)
+	}
+
+	return associations, nil
+}
+
+func (r *MarkerRepository) getSFAFFieldsByMarkerID(markerID uuid.UUID) ([]models.SFAFField, error) {
+	query := `
+        SELECT id, marker_id, field_number, field_value, occurrence_number, created_at
+        FROM sfaf_fields
+        WHERE marker_id = $1
+        ORDER BY field_number, occurrence_number`
+
+	var fields []models.SFAFField
+	err := r.db.Select(&fields, query, markerID)
+	return fields, err
+}
+
+// IRAC Notes management
+func (r *MarkerRepository) AddIRACNote(markerID uuid.UUID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	query := `
+        INSERT INTO marker_irac_notes (marker_id, irac_note_code, field_number, occurrence_number)
+        VALUES ($1, $2, $3, $4)`
+
+	_, err := r.db.Exec(query, markerID, noteCode, fieldNumber, occurrenceNumber)
+	return err
+}
+
+func (r *MarkerRepository) RemoveIRACNote(markerID uuid.UUID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	query := `
+        DELETE FROM marker_irac_notes 
+        WHERE marker_id = $1 AND irac_note_code = $2 AND field_number = $3 AND occurrence_number = $4`
+
+	_, err := r.db.Exec(query, markerID, noteCode, fieldNumber, occurrenceNumber)
+	return err
+}

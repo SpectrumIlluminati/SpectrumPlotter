@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en-US" data-theme="dark">
+
+<head>
+    <meta charset="utf-8" />
+    <title>{{.title}}</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+
+    <!-- Your existing styles -->
+    <link rel="stylesheet" href="/css/sidebar.css" />
+    <link rel="stylesheet" href="/css/themes.css" />
+    <link rel="stylesheet" href="/css/leaflet-dark.css" />
+    <link rel="stylesheet" href="/css/styles.css" />
+
+    <style>
+        /* CSS Variables for your sidebar */
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2a2a2a;
+            --bg-tertiary: #333;
+            --text-primary: #fff;
+            --text-secondary: #ccc;
+            --text-muted: #999;
+            --accent-color: #4CAF50;
+            --border-color: #555;
+            --input-bg: #333;
+            --button-danger: #f44336;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Map styling */
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* TEST: Force legend positioning */
+        #legend {
+            position: fixed !important;
+            bottom: 20px !important;
+            left: 20px !important;
+            background: rgba(0, 0, 0, 0.8) !important;
+            color: white !important;
+            padding: 12px !important;
+            border-radius: 8px !important;
+            z-index: 1000 !important;
+            font-size: 14px !important;
+            min-width: 200px !important;
+            width: 200px !important;
+            max-width: 200px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Map container -->
+    <div id="map"></div>
+
+    <!-- Legend -->
+    <div id="legend">
+        <div id="legend-header">Legend ▾</div>
+        <div id="legend-body">
+            <div><img src="./images/marker-green.png" style="width:15px;vertical-align:middle;"> Manual Marker
+                (Editable)</div>
+            <div><img src="./images/marker-blue.png" style="width:15px;vertical-align:middle;"> Imported Marker
+                (Read-only)</div>
+        </div>
+    </div>
+
+    <!-- Coordinate tooltip -->
+    <div id="coordinate-tooltip"
+        style="position: absolute; background: rgba(0,0,0,0.8); color: white; padding: 5px; border-radius: 3px; display: none; z-index: 1001; pointer-events: none;">
+    </div>
+
+    <!-- Status indicator -->
+    <div
+        style="position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #4CAF50; padding: 10px; border-radius: 5px; z-index: 1000;">
+        🚀 Go Backend Active
+    </div>
+
+    {{template "sidebar.html" .}}
+
+    <!-- Load JavaScript libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <!-- Your map JavaScript -->
+    <!-- <script src="/js/manager.js"></script> -->
+    <script src="/js/map.js"></script>
+    <script src="/js/buttonFunctions.js"></script>
+    <script src="/js/sfaf-import-export.js"></script>
+    <script src="/js/sfaf-state-manager.js"></script>
+    <script src="/js/sfaf-utilities.js"></script>
+    <script src="/js/sfafCompliance.js"></script>
+    <script src="/js/sfafFieldSpecs.js"></script>
+    <script src="/js/sfafReferenceData.js"></script>
+
+    <!-- Simple sidebar controls -->
+    <!-- DEBUG: Sidebar controls -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Make legend collapsible
+            const legendHeader = document.getElementById('legend-header');
+            if (legendHeader) {
+                legendHeader.addEventListener('click', function () {
+                    const legend = document.getElementById('legend');
+                    if (legend) {
+                        legend.classList.toggle('collapsed');
+                    }
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            function toggleSidebar() {
+                const sidebar = document.getElementById('persistentSidebar');
+                if (sidebar) {
+                    sidebar.classList.toggle('open');
+                }
+            }
+
+            function closeSidebar() {
+                const sidebar = document.getElementById('persistentSidebar');
+                if (sidebar) {
+                    sidebar.classList.remove('open');
+                }
+            }
+
+            // Blue floating button - toggle sidebar
+            const openBtn = document.getElementById('openSidebarBtn');
+            if (openBtn) {
+                openBtn.addEventListener('click', toggleSidebar);
+            }
+
+            // Close button in sidebar header
+            const closeBtn = document.getElementById('sidebarToggle');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeSidebar);
+            }
+
+            // Tab switching
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active from all tabs
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+                    // Add active to clicked tab
+                    btn.classList.add('active');
+                    const tabId = btn.dataset.tab;
+                    const panel = document.getElementById(`tab-${tabId}`);
+                    if (panel) panel.classList.add('active');
+                });
+            });
+            const importBtn = document.getElementById('importSFAFBtn');
+            // console.log('🔍 Looking for import button:', importBtn);
+
+            if (importBtn) {
+                importBtn.addEventListener('click', async function (e) {
+                    e.preventDefault();
+                    console.log('🔥 Import button clicked!');
+
+                    const fileInput = document.getElementById('sfafFile');
+                    const file = fileInput?.files[0];
+
+                    console.log('📁 File input:', fileInput);
+                    console.log('📋 Selected file:', file);
+
+                    if (!file) {
+                        console.log('❌ No file selected');
+                        showSFAFStatusMessage('❌ Please select a SFAF file to import', 'error');
+                        return;
+                    }
+
+                    showSFAFStatusMessage('📥 Importing SFAF file...', 'info');
+
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        console.log('🌐 Sending POST to /api/sfaf/import');
+                        const response = await fetch('/api/sfaf/import', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        console.log('📡 Response status:', response.status);
+                        const result = await response.json();
+                        console.log('📋 Response data:', result);
+
+                        if (result.success) {
+                            // Add markers to map
+                            result.markers.forEach(markerData => {
+                                console.log('📍 Adding marker:', markerData);
+                                createMarkerOnMap(markerData);
+                            });
+
+                            showSFAFStatusMessage(
+                                `✅ Imported ${result.imported_count} markers with SFAF data`,
+                                'success'
+                            );
+
+                            fileInput.value = ''; // Clear file input
+                        } else {
+                            showSFAFStatusMessage('❌ Import failed: ' + result.error, 'error');
+                        }
+                    } catch (error) {
+                        console.error('💥 Import error:', error);
+                        showSFAFStatusMessage('❌ Import failed. Check console for details.', 'error');
+                    }
+                });
+            } else {
+                console.log('❌ Import button not found! Check button ID.');
+            }
+
+            // ADD THE STATUS MESSAGE FUNCTION IF IT DOESN'T EXIST
+            if (typeof showSFAFStatusMessage === 'undefined') {
+                window.showSFAFStatusMessage = function (message, type) {
+                    // Remove existing messages
+                    const existing = document.querySelectorAll('.sfaf-status-message');
+                    existing.forEach(msg => msg.remove());
+
+                    // Create status message
+                    const statusDiv = document.createElement('div');
+                    statusDiv.className = 'sfaf-status-message';
+
+                    let backgroundColor;
+                    switch (type) {
+                        case 'success': backgroundColor = '#4CAF50'; break;
+                        case 'error': backgroundColor = '#f44336'; break;
+                        case 'info': backgroundColor = '#2196F3'; break;
+                        default: backgroundColor = '#666';
+                    }
+
+                    statusDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 470px;
+                background: ${backgroundColor};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                z-index: 2000;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                max-width: 300px;
+            `;
+                    statusDiv.textContent = message;
+                    document.body.appendChild(statusDiv);
+
+                    // Auto-remove
+                    setTimeout(() => statusDiv.remove(), 4000);
+                };
+            }
+        });
+    </script>
+</body>
+
+</html>
+</body>
+
+</html>

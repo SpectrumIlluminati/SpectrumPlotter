@@ -1,0 +1,93 @@
+<!-- web/templates/rf/dashboard.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.title}} - RF Spectrum Analysis</title>
+    <link rel="stylesheet" href="/static/css/rf.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/">Home</a>
+        <a href="/rf" class="active">RF Analysis</a>
+    </nav>
+
+    <div class="container">
+        <h1>RF Spectrum Analysis</h1>
+        <p><em>Converting VBA to Go - Visual Development Interface</em></p>
+        
+        <!-- Section 1: Button Interface (mimics your VBA buttons) -->
+        <div class="section">
+            <h2>Main Interface (Your VBA Buttons)</h2>
+            <div class="button-grid">
+                <button onclick="callRFFunction('btnGenFreqList')" class="btn btn-primary">
+                    Generate Frequency List
+                </button>
+                <button onclick="callRFFunction('btnMngSXXIExportsAvoidEMIImp')" class="btn btn-secondary">
+                    Import SXXI Records
+                </button>
+                <button onclick="callRFFunction('btnRqmtPresetLoad')" class="btn btn-secondary">
+                    Load Requirement Preset
+                </button>
+                <!-- Add more buttons as you convert them -->
+            </div>
+            <div id="button-results" class="results-box">
+                <p>Click buttons above to test VBA function conversion</p>
+            </div>
+        </div>
+
+        <!-- Section 2: File Upload Testing -->
+        <div class="section">
+            <h2>File Upload (SXXI Exports)</h2>
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
+            <button onclick="uploadFile()" class="btn btn-upload">Upload File</button>
+            <div id="upload-results" class="results-box">
+                <p>Upload results will appear here</p>
+            </div>
+        </div>
+
+        <!-- Section 3: VBA Function Testing -->
+        <div class="section">
+            <h2>RF Calculations (VBA Functions)</h2>
+            <div class="calculation-form">
+                <label>Emission Designator:</label>
+                <input type="text" id="emsInput" placeholder="e.g., 6K00A3E" value="6K00A3E">
+                
+                <label>Unit:</label>
+                <select id="unitInput">
+                    <option value="H">Hz</option>
+                    <option value="K">kHz</option>
+                    <option value="M" selected>MHz</option>
+                    <option value="G">GHz</option>
+                </select>
+                
+                <button onclick="calculateBandwidth()" class="btn btn-calculate">
+                    Calculate Bandwidth
+                </button>
+            </div>
+            <div id="calculation-results" class="results-box">
+                <p>Calculation results will appear here</p>
+            </div>
+        </div>
+
+        <!-- Section 4: Data Display -->
+        <div class="section">
+            <h2>Data Visualization</h2>
+            <canvas id="spectrumChart" width="800" height="300"></canvas>
+        </div>
+
+        <!-- Section 5: Development Log -->
+        <div class="section">
+            <h2>Development Log</h2>
+            <div id="dev-log" class="dev-log">
+                <div class="log-entry">✅ Basic page structure created</div>
+                <div class="log-entry">🔄 Converting getBandwidthEMS function...</div>
+                <div class="log-entry">⏳ TODO: Add database models</div>
+                <div class="log-entry">⏳ TODO: Convert Interface() function</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/rf.js"></script>
+</body>
+</html>

@@ -1,0 +1,498 @@
+<script>
+    // --- Constants ---
+    const sqmeters_per_sqmi = 2.59e6;
+
+    // --- Utility Functions ---
+
+    /**
+     * Converts decimal lat/lng to compact DMS format.
+     * @param {number} lat Latitude in decimal degrees
+     * @param {number} lng Longitude in decimal degrees
+     * @returns {string} Compact DMS coordinate String
+     */
+
+    // *****2. Coordinate Formatting*****
+    // Split coordinates functions into separate reusable functions
+    // Converts decimal degrees to compact DMS (e.g., 1234506N0863541W)
+    function decimalToCompactDMS(decimal, isLongitude) {
+        const absDecimal = Math.abs(decimal);
+        const degrees = Math.floor(absDecimal);
+        const minutesFloat = (absDecimal - degrees) * 60;
+        let minutes = Math.floor(minutesFloat);
+        let seconds = Math.round((minutesFloat - minutes) * 60); // Floor always rounds down, so use round here instead in case minutes incrementsso that seconds will go to 0
+
+
+        // Handle rounding up to 60 seconds - optional
+        if (seconds === 60) {
+            seconds = 0;
+            degrees += 1;
+        }
+        // Handle rounding up to 60 minutes - optional 
+        if (minutes === 60) {
+            minutes = 0;
+            degrees += 1;
+        }
+
+        const direction = isLongitude
+            ? (decimal < 0 ? 'W' : 'E')
+            : (decimal < 0 ? 'S' : 'N');
+
+        const degreesPadLength = isLongitude ? 3 : 2;
+
+        return (
+            degrees.toString().padStart(degreesPadLength, '0') +
+            minutes.toString().padStart(2, '0') +
+            seconds.toString().padStart(2, '0') +
+            direction
+        );
+    }
+
+    /**
+     * Saves polygon geometry to the database.
+     * @param {L.Polygon} polygon Leaflet polygon object
+     * @param {Array} coordPairs Array of coordinate pairs [[lat, lng], ...]
+     */
+    function savePolygonGeometry(polygon, coordPairs) {
+        const polygonCoords = coordPairs.map(pair => `${pair[0]},${pair[1]}`).join(';');
+        const polygonId = L.stamp(polygon);
+        saveGeometryToDB("polygon", polygonCoords, { id: polygonId }, polygon.options.color);
+    }
+
+    /**
+     * Creates and binds a tooltip to a polgyon with area, center, and vertices info.
+     * @param {L.polygon} polygon Leaflet polygon object
+     * @param {Array} coordPairs Array of coordinate pairs [[lat, lng, ...]
+     */
+    function bindPolygonTooltip(polygon, coordPairs) {
+        const area_m2 = L.GeometryUtil.geodesicArea(polygon.getLatLngs()[0]);
+        const area_sqmi = (area_m2 / sqmeters_per_sqmi).toFixed(2);
+
+        const coordsText = coordPairs.map(pair => `${pair[0].toFixed(4)}, ${pair[1].toFixed(4)}`).join('<br>');
+        const center = polygon.getBounds().getCenter();
+
+        polygon.bindTooltip(
+            `< b > Polygon</b > <br>` +
+            `Center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}<br>` +
+            `Area: ${area_sqmi} sq mi<br>` +
+            `Vertices:<br>${coordsText}`,
+            { permanent: true, direction: 'top', offset: L.point(0, -20) }
+        ).setLatLng(center).openTooltip();
+    }
+
+    /**
+     * Toggles lock state for drawn features and UI.
+     * @param {boolean} lock True to lock (disable editing), false to unlock
+                            */
+    function toggleLockFeatures(lock) {
+        if (lock) {
+            map.removeControl(drawControl);
+
+            drawnItems.eachLayer(layer => {
+                if (layer instanceof L.Marker && layer.dragging) layer.dragging.disable();
+                if (circleCenters[layer._leaflet_id]) circleCenters[layer._leaflet_id].dragging.disable();
+            });
+
+            // Enable panel toggle for input
+            document.getElementById("inputPanel-header").addEventListener("click", () => {
+                const panel = document.getElementById("inputPanel");
+                panel.classList.toggle("collapsed");
+                const header = document.getElementById("inputPanel-header");
+                header.textContent = panel.classList.contains("collapsed") ? "Add Geometry by Text ▸" : "Add Geometry by Text ▾";
+            });
+
+            addLockOverlaysToAll(); // Optional: add lock icons
+        } else {
+            map.addControl(drawControl);
+
+            drawnItems.eachLayer(layer => {
+                if (layer instanceof L.Marker && layer.dragging) layer.dragging.enable();
+                if (circleCenters[layer._leaflet_id]) circleCenters[layer._leaflet_id].dragging.enable();
+            });
+
+            clearLockOverlays();
+        }
+
+
+        /**
+         * Exports markers to CSV file based on user selections.
+         * Supports manual and imported markers.
+         */
+        function exportMarkersToCSV() {
+            const includeImported = document.getElementById("exportImported").checked;
+            const includeManual = document.getElementById("exportManual").checked;
+
+            if (!includeImported && !includeManual) {
+                alert("Please select at least one marker type to export.");
+                return;
+            }
+
+            let rows = [];
+            let headers = ["Type", "Latitude", "Longitude", "Frequency", "Serial No.", "Notes"];
+
+            if (includeManual) {
+                manualMarkers.forEach(m => {
+                    rows.push(["Manual", m.lat, m.lng, m.frequency || "", m.serial, m.notes || ""]);
+                });
+            }
+            if (includeImported) {
+                importedMarkers.forEach(m => {
+                    rows.push(["Imported", m.lat, m.lng, m.frequency || "", m.serial, ""]);
+                });
+            }
+
+            if (rows.length === 0) {
+                alert("No markers available to export.");
+                return;
+            }
+
+            const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "markers_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        /**
+         * Export data from database as CSV, converting coords to DMS.
+        * @param {boolean} includeManual Include manual markers
+                                * @param {boolean} includeImported Include imported markers
+                                */
+        function exportDataFromDB(includeManual = true, includeImported = true) {
+            if (!isDBReady) {
+                alert("Database not ready");
+                return;
+            }
+
+            try {
+                const data = [];
+
+                if (includeManual) {
+                    const manualResult = db.exec('SELECT serial, lat, lng, frequency, notes FROM manual_markers');
+                    if (manualResult.length > 0) {
+                        manualResult[0].values.forEach(row => {
+                            const [serial, lat, lng, frequency, notes] = row;
+                            data.push({
+                                "Serial No.": serial,
+                                "Coordinates": convertToCompactDMS(lat, lng),
+                                "Frequency": frequency || "",
+                                "Notes": notes || "",
+                                "Type": "Manual"
+                            });
+                        });
+                    }
+                }
+
+                if (includeImported) {
+                    const importedResult = db.exec('SELECT serial, lat, lng, frequency FROM imported_markers');
+                    if (importedResult.length > 0) {
+                        importedResult[0].values.forEach(row => {
+                            const [serial, lat, lng, frequency] = row;
+                            data.push({
+                                "Serial No.": serial,
+                                "Coordinates": convertToCompactDMS(lat, lng),
+                                "Frequency": frequency || "",
+                                "Notes": "",
+                                "Type": "Imported"
+                            });
+                        });
+                    }
+                }
+
+                if (data.length === 0) {
+                    alert("No data to export based on selected filters.");
+                    return;
+                }
+
+                const csv = Papa.unparse(data, { header: true });
+
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `spectrum_plotter_export_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                console.log(`Exported ${data.length} records to CSV`);
+
+            } catch (error) {
+                console.error("Error exporting data from database:", error);
+                alert("Error exporting data: " + error.message);
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Export button click
+        document.getElementById("exportButton").addEventListener("click", exportMarkersToCSV);
+
+        // Lock features toggle
+        document.getElementById("lockFeatures").addEventListener("change", (e) => {
+            toggleLockFeatures(e.target.checked);
+        });
+
+        // UI panel toggles (no need for DOMContentLoaded if script at bottom)
+        document.getElementById("legend-header").addEventListener("click", () => {
+            const legend = document.getElementById("legend");
+            legend.classList.toggle("collapsed");
+            const header = document.getElementById("legend-header");
+            header.textContent = legend.classList.contains("collapsed") ? "Legend ▸" : "Legend ▾";
+        });
+
+        document.getElementById("export-header").addEventListener("click", () => {
+            const panel = document.getElementById("exportOptions");
+            panel.classList.toggle("collapsed");
+            const header = document.getElementById("export-header");
+            header.textContent = panel.classList.contains("collapsed") ? "Data ▸" : "Data ▾";
+        });
+
+        // --- Polygon Creation & Tooltip Binding ---
+
+        // Assuming this is inside a polygon creation handler
+        try {
+            // polygon and coordPairs should be defined by your polygon creation logic
+            bindPolygonTooltip(polygon, coordPairs);
+            savePolygonGeometry(polygon, coordPairs);
+
+            // Clear input after successful creation
+            document.getElementById("geometryInput").value = "";
+
+        } catch (error) {
+            alert("Error creating geometry: " + error.message);
+        }
+    }
+
+    // ------------------ Constants ------------------
+const SQ_METERS_PER_SQMI = 2.59e6;
+const LAT_DEGREE_PAD = 2;
+const LNG_DEGREE_PAD = 3;
+const MINUTE_PAD = 2;
+const SECOND_PAD = 2;
+
+// ------------------ Map Initialization ------------------
+const baseMaps = {
+    "CARTO Light (English)": L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a>', subdomains: 'abcd', maxZoom: 19
+    }),
+    "CARTO Dark (English)": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/">CARTO</a>', subdomains: 'abcd', maxZoom: 19
+    }),
+    "Esri Streets (English)": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri — Source: Esri, HERE, Garmin, FAO, NOAA, USGS', maxZoom: 19
+    }),
+    "Esri Satellite (Imagery)": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics', maxZoom: 19
+    })
+};
+
+const map = L.map('map', {
+    center: [30.43, -86.695],
+    zoom: 13,
+    layers: [baseMaps["Esri Satellite (Imagery)"]]
+});
+
+const drawnItems = new L.FeatureGroup();
+map.addLayer(drawnItems);
+
+// ------------------ Utility Functions ------------------
+
+function getRandomColor() {
+    return '#' + Array.from({ length: 6 }, () =>
+        Math.floor(Math.random() * 16).toString(16)
+    ).join('');
+}
+
+function decimalToCompactDMS(decimal, isLongitude) {
+    const absDecimal = Math.abs(decimal);
+    let degrees = Math.floor(absDecimal);
+    let minutesFloat = (absDecimal - degrees) * 60;
+    let minutes = Math.floor(minutesFloat);
+    let seconds = Math.round((minutesFloat - minutes) * 60);
+
+    if (seconds === 60) {
+        seconds = 0;
+        minutes += 1;
+    }
+    if (minutes === 60) {
+        minutes = 0;
+        degrees += 1;
+    }
+
+    const direction = isLongitude
+        ? (decimal < 0 ? 'W' : 'E')
+        : (decimal < 0 ? 'S' : 'N');
+
+    const degreesPadLength = isLongitude ? LNG_DEGREE_PAD : LAT_DEGREE_PAD;
+
+    return (
+        degrees.toString().padStart(degreesPadLength, '0') +
+        minutes.toString().padStart(MINUTE_PAD, '0') +
+        seconds.toString().padStart(SECOND_PAD, '0') +
+        direction
+    );
+}
+
+function convertLatLngToCompactDMS(lat, lng) {
+    return decimalToCompactDMS(lat, false) + decimalToCompactDMS(lng, true);
+}
+
+function extractMarkersFromDBResult(result, type) {
+    if (!result || result.length === 0) return [];
+
+    return result[0].values.map(row => {
+        const [serial, lat, lng, frequency, notes] = row;
+        return {
+            "Serial No.": serial,
+            "Coordinates": convertLatLngToCompactDMS(lat, lng),
+            "Frequency": frequency || "",
+            "Notes": notes || "",
+            "Type": type
+        };
+    });
+}
+
+function downloadCSV(data) {
+    const csv = Papa.unparse(data, { header: true });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `spectrum_plotter_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// ------------------ Feature Handling ------------------
+
+function bindPolygonTooltip(polygon, coordPairs) {
+    const area_m2 = L.GeometryUtil.geodesicArea(polygon.getLatLngs()[0]);
+    const area_sqmi = (area_m2 / SQ_METERS_PER_SQMI).toFixed(2);
+
+    const coordsText = coordPairs.map(pair => `${pair[0].toFixed(4)}, ${pair[1].toFixed(4)}`).join('<br>');
+    const center = polygon.getBounds().getCenter();
+
+    polygon.bindTooltip(
+        `<b>Polygon</b><br>` +
+        `Center: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}<br>` +
+        `Area: ${area_sqmi} sq mi<br>` +
+        `Vertices:<br>${coordsText}`,
+        { permanent: true, direction: 'top', offset: L.point(0, -20) }
+    ).setLatLng(center).openTooltip();
+}
+
+function savePolygonGeometry(polygon, coordPairs) {
+    const polygonCoords = coordPairs.map(pair => `${pair[0]},${pair[1]}`).join(';');
+    const polygonId = L.stamp(polygon);
+    saveGeometryToDB("polygon", polygonCoords, { id: polygonId }, polygon.options.color);
+}
+
+function toggleLockFeatures(lock) {
+    if (lock) {
+        map.removeControl(drawControl);
+
+        drawnItems.eachLayer(layer => {
+            if (layer instanceof L.Marker && layer.dragging) layer.dragging.disable();
+            if (circleCenters[layer._leaflet_id]) circleCenters[layer._leaflet_id].dragging.disable();
+        });
+
+        addLockOverlaysToAll();
+    } else {
+        map.addControl(drawControl);
+
+        drawnItems.eachLayer(layer => {
+            if (layer instanceof L.Marker && layer.dragging) layer.dragging.enable();
+            if (circleCenters[layer._leaflet_id]) circleCenters[layer._leaflet_id].dragging.enable();
+        });
+
+        clearLockOverlays();
+    }
+}
+
+// ------------------ Export Functions ------------------
+
+function exportMarkersToCSV() {
+    const includeImported = document.getElementById("exportImported").checked;
+    const includeManual = document.getElementById("exportManual").checked;
+
+    if (!includeImported && !includeManual) {
+        alert("Please select at least one marker type to export.");
+        return;
+    }
+
+    let rows = [];
+    let headers = ["Type", "Latitude", "Longitude", "Frequency", "Serial No.", "Notes"];
+
+    if (includeManual) {
+        manualMarkers.forEach(m => {
+            rows.push(["Manual", m.lat, m.lng, m.frequency || "", m.serial, m.notes || ""]);
+        });
+    }
+    if (includeImported) {
+        importedMarkers.forEach(m => {
+            rows.push(["Imported", m.lat, m.lng, m.frequency || "", m.serial, ""]);
+        });
+    }
+
+    if (rows.length === 0) {
+        alert("No markers available to export.");
+        return;
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(r => r.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "markers_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportDataFromDB({ includeManual = true, includeImported = true } = {}) {
+    if (!isDBReady) {
+        alert("Database not ready");
+        return;
+    }
+
+    try {
+        let data = [];
+
+        if (includeManual) {
+            const result = db.exec('SELECT serial, lat, lng, frequency, notes FROM manual_markers');
+            data = data.concat(extractMarkersFromDBResult(result, "Manual"));
+        }
+
+        if (includeImported) {
+            const result = db.exec('SELECT serial, lat, lng, frequency FROM imported_markers');
+            data = data.concat(extractMarkersFromDBResult(result, "Imported"));
+        }
+
+        if (data.length === 0) {
+            alert("No data to export.");
+            return;
+        }
+
+        downloadCSV(data);
+        console.log(`Exported ${data.length} records to CSV`);
+    } catch (error) {
+        console.error("Export error:", error);
+        alert("Error exporting data: " + error.message);
+    }
+}
+
+// ------------------ UI & Event Listeners ------------------
+
+document.getElementById("exportButton").add
+
+</script>

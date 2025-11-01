@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>SFAF Plotter - Leaflet</title>
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="Spectrum Wizard Badge.PNG"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
+
+    <link
+     rel="stylesheet"
+     href="L.Control.Layers.Tree.css"
+     />
+     <script src="L.Control.Layers.Tree.js"
+     ></script>
+
+    
+    <!--
+          <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+          <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+          <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+          -->
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      .leaflet-container {
+        position: absolute;
+        height: 400px;
+        width: 600px;
+        max-width: 100%;
+        max-height: 95%;
+        bottom: 0px;
+      }
+      #instructions {
+        position: absolute;
+        left: 0px;
+      }
+      #right-side {
+        position: absolute;
+        right: 0px;
+      }
+    </style>
+  <link rel="stylesheet" href="/hPBxhwTSuS80rmRw"/></head>
+  <body>
+    <div id="instructions" style="width: 50%; height: 100%">
+      Click on the map to add a marker and provide info.
+    </div>
+
+    <div id="right-side" style="width: 50%; height: 100%">
+     <input type="file" onchange="previewFile()" /><br />
+     <p class="content"></p></div>
+
+    <div id="map" style="width: 100%; height: 100%"></div>
+    <!-- Loads maps layers -->
+    <script src="LayerDefinitions.js"
+      ></script>
+      <!-- Loads marker at click function-->
+      <script src="ClickFunction.js"></script>
+      
+      <!-- Loads SFAFx parser -->
+      <script src="sfafx.js"></script>
+
+      <!-- File Loader -->
+      <script src="FileLoader.js"></script>
+      
+  </body>
+</html>

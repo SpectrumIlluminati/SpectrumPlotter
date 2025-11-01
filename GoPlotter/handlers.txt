@@ -1,0 +1,422 @@
+// api_handler.go
+package handlers
+
+// This file can contain shared handler utilities
+// For now, keeping it minimal
+
+type APIResponse struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   string      `json:"error,omitempty"`
+}
+
+func NewSuccessResponse(data interface{}) APIResponse {
+	return APIResponse{
+		Success: true,
+		Data:    data,
+	}
+}
+
+func NewErrorResponse(message string) APIResponse {
+	return APIResponse{
+		Success: false,
+		Error:   message,
+	}
+}
+package handlers
+
+import (
+	"net/http"
+	"sfaf-plotter/models"
+	"sfaf-plotter/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+type GeometryHandler struct {
+	geometryService *services.GeometryService
+}
+
+func NewGeometryHandler(geometryService *services.GeometryService) *GeometryHandler {
+	return &GeometryHandler{geometryService: geometryService}
+}
+
+func (gh *GeometryHandler) CreateCircle(c *gin.Context) {
+	var req models.CreateCircleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	geometry, err := gh.geometryService.CreateCircle(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Circle created successfully",
+		"geometry": geometry,
+	})
+}
+
+func (gh *GeometryHandler) CreatePolygon(c *gin.Context) {
+	var req models.CreatePolygonRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	geometry, err := gh.geometryService.CreatePolygon(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Polygon created successfully",
+		"geometry": geometry,
+	})
+}
+
+func (gh *GeometryHandler) CreateRectangle(c *gin.Context) {
+	var req models.CreateRectangleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	geometry, err := gh.geometryService.CreateRectangle(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Rectangle created successfully",
+		"geometry": geometry,
+	})
+}
+
+func (gh *GeometryHandler) GetAllGeometries(c *gin.Context) {
+	// Implementation depends on storage.GetAllGeometries method
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"geometries": []interface{}{}, // Placeholder
+	})
+}
+
+func (gh *GeometryHandler) DeleteGeometry(c *gin.Context) {
+	id := c.Param("id")
+
+	// Implementation depends on storage.DeleteGeometry method
+	_ = id // Placeholder
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Geometry deleted successfully",
+	})
+}
+// handlers/marker_handler.go
+package handlers
+
+import (
+	"net/http"
+	"sfaf-plotter/models"
+	"sfaf-plotter/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+type MarkerHandler struct {
+	markerService *services.MarkerService
+}
+
+func NewMarkerHandler(markerService *services.MarkerService) *MarkerHandler {
+	return &MarkerHandler{markerService: markerService}
+}
+
+// Existing CRUD handlers
+func (mh *MarkerHandler) CreateMarker(c *gin.Context) {
+	var req models.CreateMarkerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	marker, err := mh.markerService.CreateMarker(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, marker)
+}
+
+func (mh *MarkerHandler) GetAllMarkers(c *gin.Context) {
+	markers, err := mh.markerService.GetAllMarkers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, markers)
+}
+
+func (mh *MarkerHandler) GetMarker(c *gin.Context) {
+	id := c.Param("id")
+	marker, err := mh.markerService.GetMarker(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, marker)
+}
+
+func (mh *MarkerHandler) UpdateMarker(c *gin.Context) {
+	id := c.Param("id")
+	var req models.UpdateMarkerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	marker, err := mh.markerService.UpdateMarker(id, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, marker)
+}
+
+func (mh *MarkerHandler) DeleteMarker(c *gin.Context) {
+	id := c.Param("id")
+	err := mh.markerService.DeleteMarker(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Marker deleted successfully"})
+}
+
+func (mh *MarkerHandler) DeleteAllMarkers(c *gin.Context) {
+	err := mh.markerService.DeleteAllMarkers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "All markers deleted successfully"})
+}
+
+// New IRAC Notes handlers
+func (mh *MarkerHandler) GetIRACNotes(c *gin.Context) {
+	category := c.Query("category")
+	search := c.Query("search")
+
+	var notes []models.IRACNote
+	var err error
+
+	if search != "" {
+		notes, err = mh.markerService.SearchIRACNotes(search)
+	} else if category != "" {
+		notes, err = mh.markerService.GetIRACNotesByCategory(category)
+	} else {
+		notes, err = mh.markerService.GetIRACNotes()
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"notes":   notes,
+	})
+}
+
+func (mh *MarkerHandler) AddIRACNoteToMarker(c *gin.Context) {
+	type addNoteRequest struct {
+		MarkerID         string `json:"marker_id" binding:"required"`
+		NoteCode         string `json:"note_code" binding:"required"`
+		FieldNumber      int    `json:"field_number" binding:"required"`
+		OccurrenceNumber int    `json:"occurrence_number" binding:"required"`
+	}
+
+	var req addNoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate field number based on MCEB Publication 7 standards
+	if req.FieldNumber != 500 && req.FieldNumber != 501 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Field number must be 500 or 501"})
+		return
+	}
+
+	// Validate occurrence limits based on MCEB Pub 7 (Source: irac-notes-reference.txt)
+	if req.FieldNumber == 500 && req.OccurrenceNumber > 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Field 500 maximum 10 occurrences per MCEB Pub 7"})
+		return
+	}
+
+	if req.FieldNumber == 501 && req.OccurrenceNumber > 30 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Field 501 maximum 30 occurrences per MCEB Pub 7"})
+		return
+	}
+
+	err := mh.markerService.AddIRACNoteToMarker(req.MarkerID, req.NoteCode, req.FieldNumber, req.OccurrenceNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "IRAC note added to marker successfully"})
+}
+
+func (mh *MarkerHandler) RemoveIRACNoteFromMarker(c *gin.Context) {
+	type removeNoteRequest struct {
+		MarkerID         string `json:"marker_id" binding:"required"`
+		NoteCode         string `json:"note_code" binding:"required"`
+		FieldNumber      int    `json:"field_number" binding:"required"`
+		OccurrenceNumber int    `json:"occurrence_number" binding:"required"`
+	}
+
+	var req removeNoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := mh.markerService.RemoveIRACNoteFromMarker(req.MarkerID, req.NoteCode, req.FieldNumber, req.OccurrenceNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "IRAC note removed from marker successfully"})
+}
+package handlers
+
+import (
+	"fmt"
+	"net/http"
+	"sfaf-plotter/models"
+	"sfaf-plotter/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+type SFAFHandler struct {
+	sfafService   *services.SFAFService
+	markerService *services.MarkerService
+}
+
+func NewSFAFHandler(sfafService *services.SFAFService, markerService *services.MarkerService) *SFAFHandler {
+	return &SFAFHandler{
+		sfafService:   sfafService,
+		markerService: markerService,
+	}
+}
+
+func (sh *SFAFHandler) GetObjectData(c *gin.Context) {
+	markerID := c.Param("markerId")
+
+	markerResp, err := sh.markerService.GetMarker(markerID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Marker not found"})
+		return
+	}
+
+	sfaf, _ := sh.sfafService.GetSFAFByMarkerID(markerID)
+
+	var fields map[string]string
+	if sfaf != nil {
+		fields = sfaf.Fields // This should now work correctly
+	} else {
+		fields = sh.sfafService.AutoPopulateFromMarker(markerResp.Marker)
+	}
+
+	fieldDefs := sh.sfafService.GetFieldDefinitions()
+	coordFormats := sh.sfafService.GetCoordinateFormats(markerResp.Marker.Latitude, markerResp.Marker.Longitude)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"marker":  markerResp.Marker,
+		"coordinates": map[string]interface{}{
+			"lat":     markerResp.Marker.Latitude,  // Always float64
+			"lng":     markerResp.Marker.Longitude, // Always float64
+			"decimal": fmt.Sprintf("%.6f, %.6f", markerResp.Marker.Latitude, markerResp.Marker.Longitude),
+			"dms":     coordFormats.DMS,     // Add DMS format
+			"compact": coordFormats.Compact, // Add compact military format
+		},
+		"sfaf_fields": fields,
+		"field_defs":  fieldDefs,
+	})
+}
+
+func (sh *SFAFHandler) CreateSFAF(c *gin.Context) {
+	var req models.CreateSFAFRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	sfaf, err := sh.sfafService.CreateSFAF(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "SFAF created successfully",
+		"sfaf":    sfaf,
+	})
+}
+
+func (sh *SFAFHandler) UpdateSFAF(c *gin.Context) {
+	id := c.Param("id")
+
+	var req models.UpdateSFAFRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	sfaf, err := sh.sfafService.UpdateSFAF(id, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "SFAF updated successfully",
+		"sfaf":    sfaf,
+	})
+}
+
+func (sh *SFAFHandler) DeleteSFAF(c *gin.Context) {
+	id := c.Param("id")
+
+	err := sh.sfafService.DeleteSFAF(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "SFAF deleted successfully",
+	})
+}

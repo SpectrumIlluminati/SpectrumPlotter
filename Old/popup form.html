@@ -1,0 +1,75 @@
+To create a popup in Leaflet.js that includes a form accepting both strings and integers, you'll need to customize the popup content with HTML form elements. In this example, I'll show you how to add a simple form with a text input for string input and a number input for integer input within a popup. 
+
+Here's an extended version of the previous example, now including a form inside the popup:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaflet Popup Form Example</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="map" style="width: 600px; height: 400px;"></div>
+
+<script>
+    // Initialize the map on the "map" div with a given center and zoom
+    var map = L.map('map').setView([51.505, -0.09], 13);
+
+    // Add OpenStreetMap tiles to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Create a marker and add it to the map
+    var marker = L.marker([51.5, -0.09]).addTo(map);
+
+    // Define the form as a string
+    var formPopupContent = `
+        <form id="popupForm">
+            <label for="nameInput">Name:</label><br>
+            <input type="text" id="nameInput" name="nameInput"><br>
+            <label for="ageInput">Age:</label><br>
+            <input type="number" id="ageInput" name="ageInput" min="0"><br><br>
+            <input type="submit" value="Submit">
+        </form>
+    `;
+
+    // Attach the form to the marker as a popup
+    marker.bindPopup(formPopupContent);
+
+    // Optionally, add an event listener to handle form submission
+    // This part requires additional JavaScript to process or send form data
+    map.on('popupopen', function() {
+        var form = document.getElementById('popupForm');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form from submitting normally
+            // You can handle the form data here, for example:
+            var name = document.getElementById('nameInput').value;
+            var age = document.getElementById('ageInput').value;
+            console.log("Name: " + name + ", Age: " + age); // Example processing
+
+            // Close the popup
+            map.closePopup();
+        });
+    });
+
+</script>
+
+</body>
+</html>
+```
+
+This code snippet adds a simple form within a popup, attached to a marker on the map. The form includes:
+- A text input for a name (string input).
+- A number input for age (integer input).
+- A submit button.
+
+Additionally, there's an event listener for the `popupopen` event on the map, which adds a submit event listener to the form. When the form is submitted, it prevents the default submit action using `event.preventDefault()` (so the page doesn't reload), and then you can process the form data as needed. In the example, it simply logs the input values to the console and closes the popup.
+
+To actually use the form data (e.g., to send it to a server or further process it in your application), you would need to implement that logic in place of or in addition to the `console.log` statement.

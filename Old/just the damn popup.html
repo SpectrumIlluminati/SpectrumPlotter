@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+     <head>
+          <base target="_top" />
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+          <title>SFAF Plotter - Leaflet</title>
+
+          <link
+               rel="icon"
+               type="image/png"
+               sizes="192x192"
+               href="Spectrum Wizard Badge.PNG"
+          />
+
+          <link
+               rel="stylesheet"
+               href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+               integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+               crossorigin=""
+          />
+          <script
+               src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+               integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+               crossorigin=""
+          ></script>
+
+          <style>
+               html,
+               body {
+                    height: 100%;
+                    margin: 0;
+               }
+               .leaflet-container {
+                    position: absolute;
+                    height: 400px;
+                    width: 600px;
+                    max-width: 100%;
+                    max-height: 97%;
+                    bottom: 0px;
+               }
+               #instructions {
+                    position: absolute;
+                    left: 0px;
+               }
+               #right-side {
+                    position: absolute;
+                    right: 0px;
+               }
+          </style>
+     </head>
+     <body>
+          <div id="instructions" style="width: 50%; height: 100%">
+               Click on the map to add a marker and provide info.
+          </div>
+
+          <div id="right-side" style="width: 50%; height: 100%">
+               What's over here
+          </div>
+
+          <div id="map" style="width: 100%; height: 100%"></div>
+          <script>
+               /*
+
+To create a webpage with JavaScript and LeafletJS where the user can drop a pin and a popup then asks for a size in kilometers to draw an overlay surrounding the pin, you would need to do the following:
+
+Set up a basic HTML page with a div element to hold the map.
+Include the LeafletJS library in your page by adding the appropriate script and link tags to the head of your HTML document.
+Initialize a Leaflet map object and add it to the div element you created earlier.
+Add an event listener to the map object that listens for clicks. When the map is clicked, create a new marker at the click location and add it to the map.
+When the marker is added, open a popup that asks the user for a size in kilometers.
+Once the user enters a size, use that value to draw a circle overlay on the map centered on the marker location with a radius equal to the entered size in kilometers.
+Here’s an example code snippet that demonstrates these steps:
+
+*/
+               // ***Add function to identify default user setview *** //
+               const map = L.map("map").setView([30.43, -86.695], 14);
+               // ([dms, dms], zoom)
+
+               // add tile layer
+               L.tileLayer(
+                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                    {
+                         attribution:
+                              'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+                         maxZoom: 20,
+                    }).addTo(map);
+
+               var popup = L.popup();
+
+               function onMapClick(e) {
+                    popup
+                    .setLatLng(e.latlng)
+                    .setContent('You clicked on the map at ' + e.latlng.toString())
+                    .openOn(map);
+               }
+                       
+              
+               map.on('click', onMapClick);
+               /* listen for clicks on map
+               map.on("click", function (e) {
+                    /* get a random color for the circle
+                    L.marker(e).addTo(map);
+                    const randomHexColor = () => {
+                         /* Generate a random 2 digit hex number, padded with a
+                         0 if necessary */
+                         /* const part = () =>
+                              Math.floor(Math.random() * 256)
+                                   .toString(16)
+                                   .padStart(2, "0");
+                         const r = part();
+                         const g = part();
+                         const b = part();
+                         return `#${r}${g}${b}`;
+                        }
+                    */
+                    ;
+          </script>
+     </body>
+</html>

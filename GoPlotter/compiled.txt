@@ -1,0 +1,3163 @@
+// api_handler.go
+package handlers
+
+// This file can contain shared handler utilities
+// For now, keeping it minimal
+
+type APIResponse struct {
+	Success bool        `json:"success"`
+	Message string      `json:"message,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+	Error   string      `json:"error,omitempty"`
+}
+
+func NewSuccessResponse(data interface{}) APIResponse {
+	return APIResponse{
+		Success: true,
+		Data:    data,
+	}
+}
+
+func NewErrorResponse(message string) APIResponse {
+	return APIResponse{
+		Success: false,
+		Error:   message,
+	}
+}
+package handlers
+
+import (
+	"net/http"
+	"sfaf-plotter/models"
+	"sfaf-plotter/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+type GeometryHandler struct {
+	geometryService *services.GeometryService
+}
+
+func NewGeometryHandler(geometryService *services.GeometryService) *GeometryHandler {
+	return &GeometryHandler{geometryService: geometryService}
+}
+
+func (gh *GeometryHandler) CreateCircle(c *gin.Context) {
+	var req models.CreateCircleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	geometry, err := gh.geometryService.CreateCircle(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Circle created successfully",
+		"geometry": geometry,
+	})
+}
+
+func (gh *GeometryHandler) CreatePolygon(c *gin.Context) {
+	var req models.CreatePolygonRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	geometry, err := gh.geometryService.CreatePolygon(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Polygon created successfully",
+		"geometry": geometry,
+	})
+}
+
+func (gh *GeometryHandler) CreateRectangle(c *gin.Context) {
+	var req models.CreateRectangleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	geometry, err := gh.geometryService.CreateRectangle(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success":  true,
+		"message":  "Rectangle created successfully",
+		"geometry": geometry,
+	})
+}
+
+func (gh *GeometryHandler) GetAllGeometries(c *gin.Context) {
+	// Implementation depends on storage.GetAllGeometries method
+	c.JSON(http.StatusOK, gin.H{
+		"success":    true,
+		"geometries": []interface{}{}, // Placeholder
+	})
+}
+
+func (gh *GeometryHandler) DeleteGeometry(c *gin.Context) {
+	id := c.Param("id")
+
+	// Implementation depends on storage.DeleteGeometry method
+	_ = id // Placeholder
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Geometry deleted successfully",
+	})
+}
+// handlers/marker_handler.go
+package handlers
+
+import (
+	"net/http"
+	"sfaf-plotter/models"
+	"sfaf-plotter/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+type MarkerHandler struct {
+	markerService *services.MarkerService
+}
+
+func NewMarkerHandler(markerService *services.MarkerService) *MarkerHandler {
+	return &MarkerHandler{markerService: markerService}
+}
+
+// Existing CRUD handlers
+func (mh *MarkerHandler) CreateMarker(c *gin.Context) {
+	var req models.CreateMarkerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	marker, err := mh.markerService.CreateMarker(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, marker)
+}
+
+func (mh *MarkerHandler) GetAllMarkers(c *gin.Context) {
+	markers, err := mh.markerService.GetAllMarkers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, markers)
+}
+
+func (mh *MarkerHandler) GetMarker(c *gin.Context) {
+	id := c.Param("id")
+	marker, err := mh.markerService.GetMarker(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, marker)
+}
+
+func (mh *MarkerHandler) UpdateMarker(c *gin.Context) {
+	id := c.Param("id")
+	var req models.UpdateMarkerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	marker, err := mh.markerService.UpdateMarker(id, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, marker)
+}
+
+func (mh *MarkerHandler) DeleteMarker(c *gin.Context) {
+	id := c.Param("id")
+	err := mh.markerService.DeleteMarker(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Marker deleted successfully"})
+}
+
+func (mh *MarkerHandler) DeleteAllMarkers(c *gin.Context) {
+	err := mh.markerService.DeleteAllMarkers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "All markers deleted successfully"})
+}
+
+// New IRAC Notes handlers
+func (mh *MarkerHandler) GetIRACNotes(c *gin.Context) {
+	category := c.Query("category")
+	search := c.Query("search")
+
+	var notes []models.IRACNote
+	var err error
+
+	if search != "" {
+		notes, err = mh.markerService.SearchIRACNotes(search)
+	} else if category != "" {
+		notes, err = mh.markerService.GetIRACNotesByCategory(category)
+	} else {
+		notes, err = mh.markerService.GetIRACNotes()
+	}
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"notes":   notes,
+	})
+}
+
+func (mh *MarkerHandler) AddIRACNoteToMarker(c *gin.Context) {
+	type addNoteRequest struct {
+		MarkerID         string `json:"marker_id" binding:"required"`
+		NoteCode         string `json:"note_code" binding:"required"`
+		FieldNumber      int    `json:"field_number" binding:"required"`
+		OccurrenceNumber int    `json:"occurrence_number" binding:"required"`
+	}
+
+	var req addNoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Validate field number based on MCEB Publication 7 standards
+	if req.FieldNumber != 500 && req.FieldNumber != 501 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Field number must be 500 or 501"})
+		return
+	}
+
+	// Validate occurrence limits based on MCEB Pub 7 (Source: irac-notes-reference.txt)
+	if req.FieldNumber == 500 && req.OccurrenceNumber > 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Field 500 maximum 10 occurrences per MCEB Pub 7"})
+		return
+	}
+
+	if req.FieldNumber == 501 && req.OccurrenceNumber > 30 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Field 501 maximum 30 occurrences per MCEB Pub 7"})
+		return
+	}
+
+	err := mh.markerService.AddIRACNoteToMarker(req.MarkerID, req.NoteCode, req.FieldNumber, req.OccurrenceNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "IRAC note added to marker successfully"})
+}
+
+func (mh *MarkerHandler) RemoveIRACNoteFromMarker(c *gin.Context) {
+	type removeNoteRequest struct {
+		MarkerID         string `json:"marker_id" binding:"required"`
+		NoteCode         string `json:"note_code" binding:"required"`
+		FieldNumber      int    `json:"field_number" binding:"required"`
+		OccurrenceNumber int    `json:"occurrence_number" binding:"required"`
+	}
+
+	var req removeNoteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := mh.markerService.RemoveIRACNoteFromMarker(req.MarkerID, req.NoteCode, req.FieldNumber, req.OccurrenceNumber)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "IRAC note removed from marker successfully"})
+}
+package handlers
+
+import (
+	"fmt"
+	"net/http"
+	"sfaf-plotter/models"
+	"sfaf-plotter/services"
+
+	"github.com/gin-gonic/gin"
+)
+
+type SFAFHandler struct {
+	sfafService   *services.SFAFService
+	markerService *services.MarkerService
+}
+
+func NewSFAFHandler(sfafService *services.SFAFService, markerService *services.MarkerService) *SFAFHandler {
+	return &SFAFHandler{
+		sfafService:   sfafService,
+		markerService: markerService,
+	}
+}
+
+func (sh *SFAFHandler) GetObjectData(c *gin.Context) {
+	markerID := c.Param("markerId")
+
+	markerResp, err := sh.markerService.GetMarker(markerID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Marker not found"})
+		return
+	}
+
+	sfaf, _ := sh.sfafService.GetSFAFByMarkerID(markerID)
+
+	var fields map[string]string
+	if sfaf != nil {
+		fields = sfaf.Fields // This should now work correctly
+	} else {
+		fields = sh.sfafService.AutoPopulateFromMarker(markerResp.Marker)
+	}
+
+	fieldDefs := sh.sfafService.GetFieldDefinitions()
+	coordFormats := sh.sfafService.GetCoordinateFormats(markerResp.Marker.Latitude, markerResp.Marker.Longitude)
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"marker":  markerResp.Marker,
+		"coordinates": map[string]interface{}{
+			"lat":     markerResp.Marker.Latitude,  // Always float64
+			"lng":     markerResp.Marker.Longitude, // Always float64
+			"decimal": fmt.Sprintf("%.6f, %.6f", markerResp.Marker.Latitude, markerResp.Marker.Longitude),
+			"dms":     coordFormats.DMS,     // Add DMS format
+			"compact": coordFormats.Compact, // Add compact military format
+		},
+		"sfaf_fields": fields,
+		"field_defs":  fieldDefs,
+	})
+}
+
+func (sh *SFAFHandler) CreateSFAF(c *gin.Context) {
+	var req models.CreateSFAFRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	sfaf, err := sh.sfafService.CreateSFAF(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "SFAF created successfully",
+		"sfaf":    sfaf,
+	})
+}
+
+func (sh *SFAFHandler) UpdateSFAF(c *gin.Context) {
+	id := c.Param("id")
+
+	var req models.UpdateSFAFRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	sfaf, err := sh.sfafService.UpdateSFAF(id, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "SFAF updated successfully",
+		"sfaf":    sfaf,
+	})
+}
+
+func (sh *SFAFHandler) DeleteSFAF(c *gin.Context) {
+	id := c.Param("id")
+
+	err := sh.sfafService.DeleteSFAF(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "SFAF deleted successfully",
+	})
+}
+// main.go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"sfaf-plotter/config"
+	"sfaf-plotter/handlers"
+	"sfaf-plotter/repositories"
+	"sfaf-plotter/services"
+	"sfaf-plotter/storage"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+)
+
+func main() {
+	// Initialize database connection
+	db, err := config.ConnectDatabase()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer db.Close()
+
+	// Wrap with sqlx for enhanced functionality
+	sqlxDB := sqlx.NewDb(db, "postgres")
+
+	// Initialize storage (MISSING)
+	storage, err := storage.NewJSONStorage("./data")
+	if err != nil {
+		log.Fatal("Failed to initialize storage:", err)
+	}
+
+	// Initialize repositories
+	markerRepo := repositories.NewMarkerRepository(sqlxDB)
+	iracNotesRepo := repositories.NewIRACNotesRepository(sqlxDB)
+
+	// Initialize services in correct dependency order
+	serialService := services.NewSerialService()
+	coordService := services.NewCoordinateService()
+
+	// CREATE MARKER SERVICE BEFORE USING IT
+	markerService := services.NewMarkerService(markerRepo, iracNotesRepo, serialService, coordService)
+
+	// Now other services can reference markerService
+	sfafService := services.NewSFAFService(storage, coordService)
+	geometryService := services.NewGeometryService(storage, markerService, serialService, coordService)
+
+	// Initialize handlers with properly created services
+	markerHandler := handlers.NewMarkerHandler(markerService)
+	sfafHandler := handlers.NewSFAFHandler(sfafService, markerService) // ADD SFAF HANDLER
+	geometryHandler := handlers.NewGeometryHandler(geometryService)
+
+	// Setup Gin router
+	r := gin.Default()
+
+	// CORS middleware
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
+
+	// Static file serving
+	r.Static("/css", "./web/static/css")
+	r.Static("/images", "./web/static/images")
+	r.Static("/js", "./web/static/js")
+	r.Static("/references", "./web/static/references")
+	r.LoadHTMLGlob("web/templates/*")
+
+	// Main page route
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "index.html", gin.H{
+			"title": "SFAF Plotter - Military Frequency Coordination Mapping",
+		})
+	})
+
+	// API routes
+	api := r.Group("/api")
+	{
+
+		api.GET("/convert-coords", func(c *gin.Context) {
+			lat := c.Query("lat")
+			lng := c.Query("lng")
+
+			latFloat, _ := strconv.ParseFloat(lat, 64)
+			lngFloat, _ := strconv.ParseFloat(lng, 64)
+
+			// Use coordinate service for conversion
+			coordFormats := coordService.GetAllFormats(latFloat, lngFloat)
+
+			c.JSON(http.StatusOK, gin.H{
+				"decimal": fmt.Sprintf("%.4f, %.4f", latFloat, lngFloat),
+				"dms":     coordFormats.DMS,
+				"compact": coordFormats.Compact,
+			})
+		})
+
+		// Existing marker management routes
+		api.POST("/markers", markerHandler.CreateMarker)
+		api.GET("/markers", markerHandler.GetAllMarkers)
+		api.GET("/markers/:id", markerHandler.GetMarker)
+		api.PUT("/markers/:id", markerHandler.UpdateMarker)
+		api.DELETE("/markers/:id", markerHandler.DeleteMarker)
+		api.DELETE("/markers", markerHandler.DeleteAllMarkers)
+
+		// IRAC Notes management routes
+		api.GET("/irac-notes", markerHandler.GetIRACNotes)
+		api.POST("/markers/irac-notes", markerHandler.AddIRACNoteToMarker)
+		api.DELETE("/markers/irac-notes", markerHandler.RemoveIRACNoteFromMarker)
+
+		// ✅ ADD SFAF ROUTES
+		api.GET("/sfaf/object-data/:markerId", sfafHandler.GetObjectData)
+		api.POST("/sfaf", sfafHandler.CreateSFAF)
+		api.PUT("/sfaf/:id", sfafHandler.UpdateSFAF)
+		api.DELETE("/sfaf/:id", sfafHandler.DeleteSFAF)
+
+		// ✅ ADD GEOMETRY ROUTES
+		api.POST("/geometry/circle", geometryHandler.CreateCircle)
+		api.POST("/geometry/polygon", geometryHandler.CreatePolygon)
+		api.POST("/geometry/rectangle", geometryHandler.CreateRectangle)
+		api.GET("/geometry", geometryHandler.GetAllGeometries)
+		api.DELETE("/geometry/:id", geometryHandler.DeleteGeometry)
+	}
+
+	log.Println("🚀 SFAF Plotter server starting on :8080")
+	log.Println("📊 PostgreSQL database connected")
+	log.Println("🗺️ MCEB Publication 7 compliance enabled")
+
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
+}
+// models/coordinates_model.go
+package models
+
+type Coordinate struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
+type DMSCoordinate struct {
+	Degrees   int     `json:"degrees"`
+	Minutes   int     `json:"minutes"`
+	Seconds   float64 `json:"seconds"`
+	Direction string  `json:"direction"`
+}
+
+type CoordinateResponse struct {
+	Decimal string `json:"decimal"`
+	DMS     string `json:"dms"`
+	Compact string `json:"compact"`
+}
+// models/geometry_model.go
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type GeometryType string
+
+const (
+	GeometryTypeCircle    GeometryType = "circle"
+	GeometryTypePolygon   GeometryType = "polygon"
+	GeometryTypeRectangle GeometryType = "rectangle"
+)
+
+type Geometry struct {
+	ID        uuid.UUID    `json:"id" db:"id"`
+	Type      GeometryType `json:"type" db:"type"`
+	Serial    string       `json:"serial" db:"serial"`
+	Color     string       `json:"color" db:"color"`
+	CreatedAt time.Time    `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time    `json:"updated_at" db:"updated_at"`
+
+	// Center marker (all geometries have one)
+	Latitude  float64 `json:"lat" db:"latitude"`
+	Longitude float64 `json:"lng" db:"longitude"`
+
+	// Type-specific properties
+	CircleProps    *CircleGeometry    `json:"circle_properties,omitempty"`
+	PolygonProps   *PolygonGeometry   `json:"polygon_properties,omitempty"`
+	RectangleProps *RectangleGeometry `json:"rectangle_properties,omitempty"`
+}
+
+type CircleGeometry struct {
+	Radius   float64 `json:"radius"`    // in meters
+	RadiusKm float64 `json:"radius_km"` // in kilometers
+	RadiusNm float64 `json:"radius_nm"` // in nautical miles
+	Area     float64 `json:"area"`      // in square miles
+	Unit     string  `json:"unit"`      // "km" or "nm"
+}
+
+type PolygonGeometry struct {
+	Points   []Coordinate `json:"points"`
+	Vertices int          `json:"vertices"`
+	Area     float64      `json:"area"` // in square miles
+}
+
+type RectangleGeometry struct {
+	Bounds []Coordinate `json:"bounds"` // [SW, NE]
+	Area   float64      `json:"area"`   // in square miles
+}
+
+// Create requests
+type CreateCircleRequest struct {
+	Lat       float64 `json:"lat" binding:"required"`
+	Lng       float64 `json:"lng" binding:"required"`
+	Radius    float64 `json:"radius" binding:"required"`
+	Unit      string  `json:"unit"` // "km" or "nm", defaults to "km"
+	Color     string  `json:"color"`
+	Frequency string  `json:"frequency"`
+	Notes     string  `json:"notes"`
+}
+
+type CreatePolygonRequest struct {
+	Points    []Coordinate `json:"points" binding:"required"`
+	Color     string       `json:"color"`
+	Frequency string       `json:"frequency"`
+	Notes     string       `json:"notes"`
+}
+
+type CreateRectangleRequest struct {
+	SouthWest Coordinate `json:"south_west" binding:"required"`
+	NorthEast Coordinate `json:"north_east" binding:"required"`
+	Color     string     `json:"color"`
+	Frequency string     `json:"frequency"`
+	Notes     string     `json:"notes"`
+}
+// models/marker_models.go
+package models
+
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+)
+
+type Marker struct {
+	ID          uuid.UUID             `json:"id" db:"id"`
+	Serial      string                `json:"serial" db:"serial"`
+	Latitude    float64               `json:"lat" db:"latitude"`
+	Longitude   float64               `json:"lng" db:"longitude"`
+	Frequency   string                `json:"frequency" db:"frequency"`
+	Notes       string                `json:"notes" db:"notes"`
+	MarkerType  string                `json:"type" db:"marker_type"`
+	IsDraggable bool                  `json:"is_draggable" db:"is_draggable"`
+	CreatedAt   time.Time             `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at" db:"updated_at"`
+	IRACNotes   []IRACNoteAssociation `json:"irac_notes,omitempty"`
+	SFAFFields  []SFAFField           `json:"sfaf_fields,omitempty"`
+}
+
+type IRACNote struct {
+	Code           string          `json:"code" db:"code"`
+	Title          string          `json:"title" db:"title"`
+	Description    string          `json:"description" db:"description"`
+	Category       string          `json:"category" db:"category"`
+	FieldPlacement int             `json:"field_placement" db:"field_placement"`
+	Agency         pq.StringArray  `json:"agency" db:"agency"`
+	TechnicalSpecs json.RawMessage `json:"technical_specs" db:"technical_specs"`
+	CreatedAt      time.Time       `json:"created_at" db:"created_at"`
+}
+
+type IRACNoteAssociation struct {
+	ID               uuid.UUID `json:"id" db:"id"`
+	MarkerID         uuid.UUID `json:"marker_id" db:"marker_id"`
+	IRACNoteCode     string    `json:"irac_note_code" db:"irac_note_code"`
+	FieldNumber      int       `json:"field_number" db:"field_number"`
+	OccurrenceNumber int       `json:"occurrence_number" db:"occurrence_number"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	IRACNote         *IRACNote `json:"irac_note,omitempty"`
+}
+
+type SFAFField struct {
+	ID               uuid.UUID `json:"id" db:"id"`
+	MarkerID         uuid.UUID `json:"marker_id" db:"marker_id"`
+	FieldNumber      string    `json:"field_number" db:"field_number"`
+	FieldValue       string    `json:"field_value" db:"field_value"`
+	OccurrenceNumber int       `json:"occurrence_number" db:"occurrence_number"`
+	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+}
+
+// Request/Response models for API
+type CreateMarkerRequest struct {
+	Latitude   float64 `json:"lat" binding:"required"`
+	Longitude  float64 `json:"lng" binding:"required"`
+	Frequency  string  `json:"frequency"`
+	Notes      string  `json:"notes"`
+	MarkerType string  `json:"type"`
+}
+
+type UpdateMarkerRequest struct {
+	Latitude    *float64 `json:"lat,omitempty"`
+	Longitude   *float64 `json:"lng,omitempty"`
+	Frequency   *string  `json:"frequency,omitempty"`
+	Notes       *string  `json:"notes,omitempty"`
+	MarkerType  *string  `json:"type,omitempty"`
+	IsDraggable *bool    `json:"is_draggable,omitempty"`
+}
+
+type MarkerResponse struct {
+	Success bool    `json:"success"`
+	Message string  `json:"message"`
+	Marker  *Marker `json:"marker,omitempty"`
+}
+
+type MarkersResponse struct {
+	Success bool     `json:"success"`
+	Message string   `json:"message"`
+	Markers []Marker `json:"markers,omitempty"`
+}
+// models/sfaf_model.go
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type SFAF struct {
+	ID        uuid.UUID         `json:"id"`
+	MarkerID  uuid.UUID         `json:"marker_id"`
+	Fields    map[string]string `json:"fields"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
+}
+
+type SFAFFormDefinition struct {
+	FieldNumber string   `json:"field_number"`
+	Label       string   `json:"label"`
+	Required    bool     `json:"required"`
+	FieldType   string   `json:"field_type"`
+	Options     []string `json:"options,omitempty"`
+	Validation  string   `json:"validation,omitempty"`
+	Help        string   `json:"help,omitempty"`
+}
+
+// Request/Response types
+type CreateSFAFRequest struct {
+	MarkerID string            `json:"marker_id" binding:"required"`
+	Fields   map[string]string `json:"fields"`
+}
+
+type UpdateSFAFRequest struct {
+	Fields map[string]string `json:"fields" binding:"required"`
+}
+
+type ValidateSFAFRequest struct {
+	Fields map[string]string `json:"fields" binding:"required"`
+}
+
+type ValidationResult struct {
+	IsValid bool                          `json:"is_valid"`
+	Errors  map[string]string             `json:"errors,omitempty"`
+	Fields  map[string]SFAFFormDefinition `json:"fields"`
+}
+
+// Export format
+type SFAFExportFormat string
+
+const (
+	SFAFExportCSV  SFAFExportFormat = "csv"
+	SFAFExportJSON SFAFExportFormat = "json"
+	SFAFExportXML  SFAFExportFormat = "xml"
+)
+package repositories
+
+import (
+	"sfaf-plotter/models" // Import your models
+
+	"github.com/jmoiron/sqlx"
+)
+
+type IRACNotesRepository struct {
+	db *sqlx.DB
+}
+
+func NewIRACNotesRepository(db *sqlx.DB) *IRACNotesRepository {
+	return &IRACNotesRepository{db: db}
+}
+
+// Use models.IRACNote instead of local type
+func (r *IRACNotesRepository) Create(note *models.IRACNote) error {
+	query := `
+        INSERT INTO irac_notes (code, title, description, category, field_placement, agency, technical_specs)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING created_at`
+
+	return r.db.QueryRow(query, note.Code, note.Title, note.Description,
+		note.Category, note.FieldPlacement, note.Agency, note.TechnicalSpecs).
+		Scan(&note.CreatedAt)
+}
+
+func (r *IRACNotesRepository) GetAllNotes() ([]models.IRACNote, error) {
+	var notes []models.IRACNote
+	query := `SELECT code, title, description, category, field_placement, agency, technical_specs, created_at FROM irac_notes`
+
+	err := r.db.Select(&notes, query)
+	return notes, err
+}
+
+func (r *IRACNotesRepository) GetNotesByCategory(category string) ([]models.IRACNote, error) {
+	var notes []models.IRACNote
+	query := `SELECT code, title, description, category, field_placement, agency, technical_specs, created_at FROM irac_notes WHERE category = $1`
+
+	err := r.db.Select(&notes, query, category)
+	return notes, err
+}
+
+func (r *IRACNotesRepository) SearchNotes(searchTerm string) ([]models.IRACNote, error) {
+	var notes []models.IRACNote
+	query := `SELECT code, title, description, category, field_placement, agency, technical_specs, created_at 
+              FROM irac_notes 
+              WHERE title ILIKE $1 OR description ILIKE $1 OR code ILIKE $1`
+
+	searchPattern := "%" + searchTerm + "%"
+	err := r.db.Select(&notes, query, searchPattern, searchPattern, searchPattern)
+	return notes, err
+}
+// repositories/marker_repository.go
+package repositories
+
+import (
+	"fmt"
+	"sfaf-plotter/models"
+	"strings"
+
+	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+)
+
+type MarkerRepository struct {
+	db *sqlx.DB
+}
+
+func NewMarkerRepository(db *sqlx.DB) *MarkerRepository {
+	return &MarkerRepository{db: db}
+}
+
+func (r *MarkerRepository) Create(marker *models.Marker) error {
+	query := `
+        INSERT INTO markers (id, serial, latitude, longitude, frequency, notes, marker_type, is_draggable)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING created_at, updated_at`
+
+	err := r.db.QueryRow(query,
+		marker.ID, marker.Serial, marker.Latitude, marker.Longitude,
+		marker.Frequency, marker.Notes, marker.MarkerType, marker.IsDraggable,
+	).Scan(&marker.CreatedAt, &marker.UpdatedAt)
+
+	return err
+}
+
+func (r *MarkerRepository) GetAll() ([]models.Marker, error) {
+	query := `
+        SELECT id, serial, latitude, longitude, frequency, notes, 
+               marker_type, is_draggable, created_at, updated_at
+        FROM markers
+        ORDER BY created_at DESC`
+
+	var markers []models.Marker
+	err := r.db.Select(&markers, query)
+	return markers, err
+}
+
+// Repository method building dynamic UPDATE queries
+func (r *MarkerRepository) buildUpdateClause(req models.UpdateMarkerRequest) []string {
+	var setParts []string
+
+	// Static timestamp (no formatting needed)
+	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
+
+	// Dynamic fields (fmt.Sprintf appropriate when needed)
+	if req.Latitude != nil {
+		setParts = append(setParts, fmt.Sprintf("latitude = %f", *req.Latitude))
+	}
+
+	if req.Longitude != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("longitude = %f", *req.Longitude))
+	}
+
+	if req.Frequency != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("frequency = %s", pq.QuoteLiteral(*req.Frequency)))
+	}
+
+	if req.Notes != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("notes = %s", pq.QuoteLiteral(*req.Notes)))
+	}
+
+	if req.MarkerType != nil {
+		setParts = append(setParts, fmt.Sprintf("marker_type = %s", pq.QuoteLiteral(*req.MarkerType)))
+	}
+
+	if req.IsDraggable != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("is_draggable = %t", *req.IsDraggable))
+	}
+
+	return setParts
+}
+
+func (r *MarkerRepository) GetByID(id uuid.UUID) (*models.Marker, error) {
+	query := `
+        SELECT id, serial, latitude, longitude, frequency, notes,
+               marker_type, is_draggable, created_at, updated_at
+        FROM markers
+        WHERE id = $1`
+
+	var marker models.Marker
+	err := r.db.Get(&marker, query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load associated IRAC notes
+	marker.IRACNotes, err = r.getIRACNotesByMarkerID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load associated SFAF fields
+	marker.SFAFFields, err = r.getSFAFFieldsByMarkerID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &marker, nil
+}
+
+func (r *MarkerRepository) Update(id uuid.UUID, updates map[string]interface{}) error {
+	setParts := []string{}
+	args := []interface{}{}
+	argIndex := 1
+
+	for field, value := range updates {
+		setParts = append(setParts, fmt.Sprintf("%s = $%d", field, argIndex))
+		args = append(args, value)
+		argIndex++
+	}
+
+	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
+
+	query := fmt.Sprintf(`
+        UPDATE markers
+        SET %s
+        WHERE id = $%d`,
+		strings.Join(setParts, ", "), argIndex)
+
+	args = append(args, id)
+
+	_, err := r.db.Exec(query, args...)
+	return err
+}
+
+func (r *MarkerRepository) Delete(id uuid.UUID) error {
+	query := `DELETE FROM markers WHERE id = $1`
+	_, err := r.db.Exec(query, id)
+	return err
+}
+
+func (r *MarkerRepository) DeleteAll() error {
+	query := `DELETE FROM markers`
+	_, err := r.db.Exec(query)
+	return err
+}
+
+// Helper methods for IRAC notes and SFAF fields
+func (r *MarkerRepository) getIRACNotesByMarkerID(markerID uuid.UUID) ([]models.IRACNoteAssociation, error) {
+	query := `
+        SELECT mia.id, mia.marker_id, mia.irac_note_code, mia.field_number, 
+               mia.occurrence_number, mia.created_at,
+               in_.code, in_.title, in_.description, in_.category, 
+               in_.field_placement, in_.agency, in_.technical_specs
+        FROM marker_irac_notes mia
+        JOIN irac_notes in_ ON mia.irac_note_code = in_.code
+        WHERE mia.marker_id = $1
+        ORDER BY mia.field_number, mia.occurrence_number`
+
+	rows, err := r.db.Query(query, markerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var associations []models.IRACNoteAssociation
+	for rows.Next() {
+		var assoc models.IRACNoteAssociation
+		var note models.IRACNote
+
+		err := rows.Scan(
+			&assoc.ID, &assoc.MarkerID, &assoc.IRACNoteCode,
+			&assoc.FieldNumber, &assoc.OccurrenceNumber, &assoc.CreatedAt,
+			&note.Code, &note.Title, &note.Description, &note.Category,
+			&note.FieldPlacement, &note.Agency, &note.TechnicalSpecs,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		assoc.IRACNote = &note
+		associations = append(associations, assoc)
+	}
+
+	return associations, nil
+}
+
+func (r *MarkerRepository) getSFAFFieldsByMarkerID(markerID uuid.UUID) ([]models.SFAFField, error) {
+	query := `
+        SELECT id, marker_id, field_number, field_value, occurrence_number, created_at
+        FROM sfaf_fields
+        WHERE marker_id = $1
+        ORDER BY field_number, occurrence_number`
+
+	var fields []models.SFAFField
+	err := r.db.Select(&fields, query, markerID)
+	return fields, err
+}
+
+// IRAC Notes management
+func (r *MarkerRepository) AddIRACNote(markerID uuid.UUID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	query := `
+        INSERT INTO marker_irac_notes (marker_id, irac_note_code, field_number, occurrence_number)
+        VALUES ($1, $2, $3, $4)`
+
+	_, err := r.db.Exec(query, markerID, noteCode, fieldNumber, occurrenceNumber)
+	return err
+}
+
+func (r *MarkerRepository) RemoveIRACNote(markerID uuid.UUID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	query := `
+        DELETE FROM marker_irac_notes 
+        WHERE marker_id = $1 AND irac_note_code = $2 AND field_number = $3 AND occurrence_number = $4`
+
+	_, err := r.db.Exec(query, markerID, noteCode, fieldNumber, occurrenceNumber)
+	return err
+}
+package repositories
+
+import (
+	"sfaf-plotter/models" // Import your models
+
+	"github.com/jmoiron/sqlx"
+)
+
+type IRACNotesRepository struct {
+	db *sqlx.DB
+}
+
+func NewIRACNotesRepository(db *sqlx.DB) *IRACNotesRepository {
+	return &IRACNotesRepository{db: db}
+}
+
+// Use models.IRACNote instead of local type
+func (r *IRACNotesRepository) Create(note *models.IRACNote) error {
+	query := `
+        INSERT INTO irac_notes (code, title, description, category, field_placement, agency, technical_specs)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING created_at`
+
+	return r.db.QueryRow(query, note.Code, note.Title, note.Description,
+		note.Category, note.FieldPlacement, note.Agency, note.TechnicalSpecs).
+		Scan(&note.CreatedAt)
+}
+
+func (r *IRACNotesRepository) GetAllNotes() ([]models.IRACNote, error) {
+	var notes []models.IRACNote
+	query := `SELECT code, title, description, category, field_placement, agency, technical_specs, created_at FROM irac_notes`
+
+	err := r.db.Select(&notes, query)
+	return notes, err
+}
+
+func (r *IRACNotesRepository) GetNotesByCategory(category string) ([]models.IRACNote, error) {
+	var notes []models.IRACNote
+	query := `SELECT code, title, description, category, field_placement, agency, technical_specs, created_at FROM irac_notes WHERE category = $1`
+
+	err := r.db.Select(&notes, query, category)
+	return notes, err
+}
+
+func (r *IRACNotesRepository) SearchNotes(searchTerm string) ([]models.IRACNote, error) {
+	var notes []models.IRACNote
+	query := `SELECT code, title, description, category, field_placement, agency, technical_specs, created_at 
+              FROM irac_notes 
+              WHERE title ILIKE $1 OR description ILIKE $1 OR code ILIKE $1`
+
+	searchPattern := "%" + searchTerm + "%"
+	err := r.db.Select(&notes, query, searchPattern, searchPattern, searchPattern)
+	return notes, err
+}
+// repositories/marker_repository.go
+package repositories
+
+import (
+	"fmt"
+	"sfaf-plotter/models"
+	"strings"
+
+	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+)
+
+type MarkerRepository struct {
+	db *sqlx.DB
+}
+
+func NewMarkerRepository(db *sqlx.DB) *MarkerRepository {
+	return &MarkerRepository{db: db}
+}
+
+func (r *MarkerRepository) Create(marker *models.Marker) error {
+	query := `
+        INSERT INTO markers (id, serial, latitude, longitude, frequency, notes, marker_type, is_draggable)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING created_at, updated_at`
+
+	err := r.db.QueryRow(query,
+		marker.ID, marker.Serial, marker.Latitude, marker.Longitude,
+		marker.Frequency, marker.Notes, marker.MarkerType, marker.IsDraggable,
+	).Scan(&marker.CreatedAt, &marker.UpdatedAt)
+
+	return err
+}
+
+func (r *MarkerRepository) GetAll() ([]models.Marker, error) {
+	query := `
+        SELECT id, serial, latitude, longitude, frequency, notes, 
+               marker_type, is_draggable, created_at, updated_at
+        FROM markers
+        ORDER BY created_at DESC`
+
+	var markers []models.Marker
+	err := r.db.Select(&markers, query)
+	return markers, err
+}
+
+// Repository method building dynamic UPDATE queries
+func (r *MarkerRepository) buildUpdateClause(req models.UpdateMarkerRequest) []string {
+	var setParts []string
+
+	// Static timestamp (no formatting needed)
+	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
+
+	// Dynamic fields (fmt.Sprintf appropriate when needed)
+	if req.Latitude != nil {
+		setParts = append(setParts, fmt.Sprintf("latitude = %f", *req.Latitude))
+	}
+
+	if req.Longitude != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("longitude = %f", *req.Longitude))
+	}
+
+	if req.Frequency != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("frequency = %s", pq.QuoteLiteral(*req.Frequency)))
+	}
+
+	if req.Notes != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("notes = %s", pq.QuoteLiteral(*req.Notes)))
+	}
+
+	if req.MarkerType != nil {
+		setParts = append(setParts, fmt.Sprintf("marker_type = %s", pq.QuoteLiteral(*req.MarkerType)))
+	}
+
+	if req.IsDraggable != nil { // ✅ Added missing field
+		setParts = append(setParts, fmt.Sprintf("is_draggable = %t", *req.IsDraggable))
+	}
+
+	return setParts
+}
+
+func (r *MarkerRepository) GetByID(id uuid.UUID) (*models.Marker, error) {
+	query := `
+        SELECT id, serial, latitude, longitude, frequency, notes,
+               marker_type, is_draggable, created_at, updated_at
+        FROM markers
+        WHERE id = $1`
+
+	var marker models.Marker
+	err := r.db.Get(&marker, query, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load associated IRAC notes
+	marker.IRACNotes, err = r.getIRACNotesByMarkerID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load associated SFAF fields
+	marker.SFAFFields, err = r.getSFAFFieldsByMarkerID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &marker, nil
+}
+
+func (r *MarkerRepository) Update(id uuid.UUID, updates map[string]interface{}) error {
+	setParts := []string{}
+	args := []interface{}{}
+	argIndex := 1
+
+	for field, value := range updates {
+		setParts = append(setParts, fmt.Sprintf("%s = $%d", field, argIndex))
+		args = append(args, value)
+		argIndex++
+	}
+
+	setParts = append(setParts, "updated_at = CURRENT_TIMESTAMP")
+
+	query := fmt.Sprintf(`
+        UPDATE markers
+        SET %s
+        WHERE id = $%d`,
+		strings.Join(setParts, ", "), argIndex)
+
+	args = append(args, id)
+
+	_, err := r.db.Exec(query, args...)
+	return err
+}
+
+func (r *MarkerRepository) Delete(id uuid.UUID) error {
+	query := `DELETE FROM markers WHERE id = $1`
+	_, err := r.db.Exec(query, id)
+	return err
+}
+
+func (r *MarkerRepository) DeleteAll() error {
+	query := `DELETE FROM markers`
+	_, err := r.db.Exec(query)
+	return err
+}
+
+// Helper methods for IRAC notes and SFAF fields
+func (r *MarkerRepository) getIRACNotesByMarkerID(markerID uuid.UUID) ([]models.IRACNoteAssociation, error) {
+	query := `
+        SELECT mia.id, mia.marker_id, mia.irac_note_code, mia.field_number, 
+               mia.occurrence_number, mia.created_at,
+               in_.code, in_.title, in_.description, in_.category, 
+               in_.field_placement, in_.agency, in_.technical_specs
+        FROM marker_irac_notes mia
+        JOIN irac_notes in_ ON mia.irac_note_code = in_.code
+        WHERE mia.marker_id = $1
+        ORDER BY mia.field_number, mia.occurrence_number`
+
+	rows, err := r.db.Query(query, markerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var associations []models.IRACNoteAssociation
+	for rows.Next() {
+		var assoc models.IRACNoteAssociation
+		var note models.IRACNote
+
+		err := rows.Scan(
+			&assoc.ID, &assoc.MarkerID, &assoc.IRACNoteCode,
+			&assoc.FieldNumber, &assoc.OccurrenceNumber, &assoc.CreatedAt,
+			&note.Code, &note.Title, &note.Description, &note.Category,
+			&note.FieldPlacement, &note.Agency, &note.TechnicalSpecs,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		assoc.IRACNote = &note
+		associations = append(associations, assoc)
+	}
+
+	return associations, nil
+}
+
+func (r *MarkerRepository) getSFAFFieldsByMarkerID(markerID uuid.UUID) ([]models.SFAFField, error) {
+	query := `
+        SELECT id, marker_id, field_number, field_value, occurrence_number, created_at
+        FROM sfaf_fields
+        WHERE marker_id = $1
+        ORDER BY field_number, occurrence_number`
+
+	var fields []models.SFAFField
+	err := r.db.Select(&fields, query, markerID)
+	return fields, err
+}
+
+// IRAC Notes management
+func (r *MarkerRepository) AddIRACNote(markerID uuid.UUID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	query := `
+        INSERT INTO marker_irac_notes (marker_id, irac_note_code, field_number, occurrence_number)
+        VALUES ($1, $2, $3, $4)`
+
+	_, err := r.db.Exec(query, markerID, noteCode, fieldNumber, occurrenceNumber)
+	return err
+}
+
+func (r *MarkerRepository) RemoveIRACNote(markerID uuid.UUID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	query := `
+        DELETE FROM marker_irac_notes 
+        WHERE marker_id = $1 AND irac_note_code = $2 AND field_number = $3 AND occurrence_number = $4`
+
+	_, err := r.db.Exec(query, markerID, noteCode, fieldNumber, occurrenceNumber)
+	return err
+}
+// coordinates_service.go
+
+package services
+
+import (
+	"fmt"
+	"math"
+	"sfaf-plotter/models"
+)
+
+type CoordinateService struct{}
+
+func NewCoordinateService() *CoordinateService {
+	return &CoordinateService{}
+}
+
+func (cs *CoordinateService) ConvertToDMS(decimal float64, isLongitude bool) string {
+	absDecimal := math.Abs(decimal)
+	degrees := int(absDecimal)
+	minutesFloat := (absDecimal - float64(degrees)) * 60
+	minutes := int(minutesFloat)
+	seconds := int((minutesFloat - float64(minutes)) * 60) // Convert to int for 0 decimal places
+
+	var direction string
+	if isLongitude {
+		if decimal < 0 {
+			direction = "W"
+		} else {
+			direction = "E"
+		}
+	} else {
+		if decimal < 0 {
+			direction = "S"
+		} else {
+			direction = "N"
+		}
+	}
+
+	return fmt.Sprintf("%d°%d'%d\" %s", degrees, minutes, seconds, direction)
+}
+
+func (cs *CoordinateService) DecimalToCompactDMS(decimal float64, isLongitude bool) string {
+	absDecimal := math.Abs(decimal)
+	degrees := int(absDecimal)
+	minutesFloat := (absDecimal - float64(degrees)) * 60
+	minutes := int(minutesFloat)
+	seconds := int((minutesFloat - float64(minutes)) * 60)
+
+	var direction string
+	var degreesPadLength int
+
+	if isLongitude {
+		degreesPadLength = 3
+		if decimal < 0 {
+			direction = "W"
+		} else {
+			direction = "E"
+		}
+	} else {
+		degreesPadLength = 2
+		if decimal < 0 {
+			direction = "S"
+		} else {
+			direction = "N"
+		}
+	}
+
+	return fmt.Sprintf("%0*d%02d%02d%s",
+		degreesPadLength, degrees, minutes, seconds, direction)
+}
+
+func (cs *CoordinateService) ConvertLatLngToCompactDMS(lat, lng float64) string {
+	latDMS := cs.DecimalToCompactDMS(lat, false)
+	lngDMS := cs.DecimalToCompactDMS(lng, true)
+	return latDMS + lngDMS
+}
+
+func (cs *CoordinateService) GetAllFormats(lat, lng float64) models.CoordinateResponse {
+	return models.CoordinateResponse{
+		Decimal: fmt.Sprintf("%.4f, %.4f", lat, lng), // Always 4 decimal places
+		DMS:     cs.ConvertToDMS(lat, false) + ", " + cs.ConvertToDMS(lng, true),
+		Compact: cs.ConvertLatLngToCompactDMS(lat, lng),
+	}
+}
+// geometry_service.go
+package services
+
+import (
+	"fmt"
+	"math"
+	"time"
+
+	"sfaf-plotter/models"
+	"sfaf-plotter/storage"
+
+	"github.com/google/uuid"
+)
+
+type GeometryService struct {
+	storage       storage.Storage
+	markerService *MarkerService
+	serialService *SerialService
+	coordService  *CoordinateService
+}
+
+func NewGeometryService(storage storage.Storage, markerService *MarkerService, serialService *SerialService, coordService *CoordinateService) *GeometryService {
+	return &GeometryService{
+		storage:       storage,
+		markerService: markerService,
+		serialService: serialService,
+		coordService:  coordService,
+	}
+}
+
+// CreateCircle matches your handleCircleCreation function
+func (gs *GeometryService) CreateCircle(req models.CreateCircleRequest) (*models.Geometry, error) {
+	// Default unit to km if not specified
+	if req.Unit == "" {
+		req.Unit = "km"
+	}
+
+	// Default color if not specified
+	if req.Color == "" {
+		req.Color = gs.getRandomColor()
+	}
+
+	// Convert radius to meters
+	radiusMeters := req.Radius * 1000 // km to meters
+	if req.Unit == "nm" {
+		radiusMeters = req.Radius * 1852 // nautical miles to meters
+	}
+
+	// Calculate area in square miles
+	areaM2 := math.Pi * math.Pow(radiusMeters, 2)
+	areaSqMi := areaM2 / 2.59e6
+
+	// Create center marker
+	centerMarkerReq := models.CreateMarkerRequest{
+		Latitude:   req.Lat,
+		Longitude:  req.Lng,
+		Frequency:  req.Frequency,
+		Notes:      req.Notes,
+		MarkerType: "circle-center",
+	}
+
+	_, err := gs.markerService.CreateMarker(centerMarkerReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create geometry
+	geometry := &models.Geometry{
+		ID:        uuid.New(),
+		Type:      models.GeometryTypeCircle,
+		Serial:    gs.serialService.GenerateSerial(),
+		Color:     req.Color,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Latitude:  req.Lat,
+		Longitude: req.Lng,
+		CircleProps: &models.CircleGeometry{
+			Radius:   radiusMeters,
+			RadiusKm: radiusMeters / 1000,
+			RadiusNm: radiusMeters / 1852,
+			Area:     areaSqMi,
+			Unit:     req.Unit,
+		},
+	}
+
+	err = gs.storage.SaveGeometry(geometry)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save geometry: %w", err)
+	}
+
+	return geometry, nil
+}
+
+// CreatePolygon matches your handlePolygonCreation function
+func (gs *GeometryService) CreatePolygon(req models.CreatePolygonRequest) (*models.Geometry, error) {
+	if len(req.Points) < 3 {
+		return nil, fmt.Errorf("polygon must have at least 3 points")
+	}
+
+	// Default color if not specified
+	if req.Color == "" {
+		req.Color = gs.getRandomColor()
+	}
+
+	// Calculate centroid (center point)
+	center := gs.calculateCentroid(req.Points)
+
+	// Create center marker
+	centerMarkerReq := models.CreateMarkerRequest{
+		Latitude:   center.Lat,
+		Longitude:  center.Lng,
+		Frequency:  req.Frequency,
+		Notes:      req.Notes,
+		MarkerType: "polygon-center",
+	}
+
+	_, err := gs.markerService.CreateMarker(centerMarkerReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate area (simplified - you might want a more accurate method)
+	area := gs.calculatePolygonArea(req.Points)
+
+	// Create geometry
+	geometry := &models.Geometry{
+		ID:        uuid.New(),
+		Type:      models.GeometryTypePolygon,
+		Serial:    gs.serialService.GenerateSerial(),
+		Color:     req.Color,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Latitude:  center.Lat,
+		Longitude: center.Lng,
+		PolygonProps: &models.PolygonGeometry{
+			Points:   req.Points,
+			Vertices: len(req.Points),
+			Area:     area,
+		},
+	}
+
+	return geometry, nil
+}
+
+// CreateRectangle matches your handleRectangleCreation function
+func (gs *GeometryService) CreateRectangle(req models.CreateRectangleRequest) (*models.Geometry, error) {
+	// Default color if not specified
+	if req.Color == "" {
+		req.Color = gs.getRandomColor()
+	}
+
+	// Calculate center point
+	centerLat := (req.SouthWest.Lat + req.NorthEast.Lat) / 2
+	centerLng := (req.SouthWest.Lng + req.NorthEast.Lng) / 2
+
+	// Create center marker
+	centerMarkerReq := models.CreateMarkerRequest{
+		Latitude:   centerLat,
+		Longitude:  centerLng,
+		Frequency:  req.Frequency,
+		Notes:      req.Notes,
+		MarkerType: "rectangle-center",
+	}
+
+	_, err := gs.markerService.CreateMarker(centerMarkerReq)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate area (simplified)
+	latDiff := math.Abs(req.NorthEast.Lat - req.SouthWest.Lat)
+	lngDiff := math.Abs(req.NorthEast.Lng - req.SouthWest.Lng)
+	area := latDiff * lngDiff * 3959 // Rough conversion to square miles
+
+	// Create geometry
+	geometry := &models.Geometry{
+		ID:        uuid.New(),
+		Type:      models.GeometryTypeRectangle,
+		Serial:    gs.serialService.GenerateSerial(),
+		Color:     req.Color,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Latitude:  centerLat,
+		Longitude: centerLng,
+		RectangleProps: &models.RectangleGeometry{
+			Bounds: []models.Coordinate{req.SouthWest, req.NorthEast},
+			Area:   area,
+		},
+	}
+
+	return geometry, nil
+}
+
+// Helper functions
+func (gs *GeometryService) getRandomColor() string {
+	colors := []string{"#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FCEA2B", "#FF9FF3", "#54A0FF"}
+	return colors[time.Now().UnixNano()%int64(len(colors))]
+}
+
+func (gs *GeometryService) calculateCentroid(points []models.Coordinate) models.Coordinate {
+	var sumLat, sumLng float64
+	for _, point := range points {
+		sumLat += point.Lat
+		sumLng += point.Lng
+	}
+	return models.Coordinate{
+		Lat: sumLat / float64(len(points)),
+		Lng: sumLng / float64(len(points)),
+	}
+}
+
+func (gs *GeometryService) calculatePolygonArea(points []models.Coordinate) float64 {
+	// Simplified area calculation - you might want to use a more accurate method
+	// This is a rough approximation
+	if len(points) < 3 {
+		return 0
+	}
+
+	var area float64
+	n := len(points)
+
+	for i := 0; i < n; i++ {
+		j := (i + 1) % n
+		area += points[i].Lat * points[j].Lng
+		area -= points[j].Lat * points[i].Lng
+	}
+
+	area = math.Abs(area) / 2.0
+	return area * 3959 // Rough conversion to square miles
+}
+﻿// map_service.go
+package services
+
+// MapService handles map-related operations
+type MapService struct {
+	// Add fields as needed
+}
+
+// NewMapService creates a new MapService instance
+func NewMapService() *MapService {
+	return &MapService{}
+}
+// marker_service.go
+package services
+
+import (
+	"fmt"
+	"sfaf-plotter/models"
+	"sfaf-plotter/repositories"
+
+	"github.com/google/uuid"
+)
+
+type MarkerService struct {
+	markerRepo    *repositories.MarkerRepository
+	iracNotesRepo *repositories.IRACNotesRepository
+	serialService *SerialService
+	coordService  *CoordinateService
+}
+
+func NewMarkerService(
+	markerRepo *repositories.MarkerRepository,
+	iracNotesRepo *repositories.IRACNotesRepository,
+	serialService *SerialService,
+	coordService *CoordinateService,
+) *MarkerService {
+	return &MarkerService{
+		markerRepo:    markerRepo,
+		iracNotesRepo: iracNotesRepo,
+		serialService: serialService,
+		coordService:  coordService,
+	}
+}
+
+func (ms *MarkerService) CreateMarker(req models.CreateMarkerRequest) (*models.MarkerResponse, error) {
+	marker := &models.Marker{
+		ID:          uuid.New(),
+		Serial:      ms.serialService.GenerateSerial(),
+		Latitude:    req.Latitude,
+		Longitude:   req.Longitude,
+		Frequency:   req.Frequency,
+		Notes:       req.Notes,
+		MarkerType:  req.MarkerType,
+		IsDraggable: true,
+	}
+
+	if marker.MarkerType == "" {
+		marker.MarkerType = "manual"
+	}
+
+	err := ms.markerRepo.Create(marker)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create marker: %w", err)
+	}
+
+	return &models.MarkerResponse{
+		Success: true,
+		Message: "Marker created successfully",
+		Marker:  marker,
+	}, nil
+}
+
+func (ms *MarkerService) GetAllMarkers() (*models.MarkersResponse, error) {
+	markers, err := ms.markerRepo.GetAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get markers: %w", err)
+	}
+
+	return &models.MarkersResponse{
+		Success: true,
+		Message: "Markers retrieved successfully",
+		Markers: markers,
+	}, nil
+}
+
+func (ms *MarkerService) GetMarker(id string) (*models.MarkerResponse, error) {
+	markerID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid marker ID: %w", err)
+	}
+
+	marker, err := ms.markerRepo.GetByID(markerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get marker: %w", err)
+	}
+
+	return &models.MarkerResponse{
+		Success: true,
+		Message: "Marker retrieved successfully",
+		Marker:  marker,
+	}, nil
+}
+
+func (ms *MarkerService) UpdateMarker(id string, req models.UpdateMarkerRequest) (*models.MarkerResponse, error) {
+	markerID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid marker ID: %w", err)
+	}
+
+	updates := make(map[string]interface{})
+
+	if req.Latitude != nil {
+		updates["latitude"] = *req.Latitude
+	}
+	if req.Longitude != nil {
+		updates["longitude"] = *req.Longitude
+	}
+	if req.Frequency != nil {
+		updates["frequency"] = *req.Frequency
+	}
+	if req.Notes != nil {
+		updates["notes"] = *req.Notes
+	}
+	if req.MarkerType != nil {
+		updates["marker_type"] = *req.MarkerType
+	}
+	if req.IsDraggable != nil {
+		updates["is_draggable"] = *req.IsDraggable
+	}
+
+	err = ms.markerRepo.Update(markerID, updates)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update marker: %w", err)
+	}
+
+	// Get updated marker
+	marker, err := ms.markerRepo.GetByID(markerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated marker: %w", err)
+	}
+
+	return &models.MarkerResponse{
+		Success: true,
+		Message: "Marker updated successfully",
+		Marker:  marker,
+	}, nil
+}
+
+func (ms *MarkerService) DeleteMarker(id string) error {
+	markerID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid marker ID: %w", err)
+	}
+
+	err = ms.markerRepo.Delete(markerID)
+	if err != nil {
+		return fmt.Errorf("failed to delete marker: %w", err)
+	}
+
+	return nil
+}
+
+func (ms *MarkerService) DeleteAllMarkers() error {
+	err := ms.markerRepo.DeleteAll()
+	if err != nil {
+		return fmt.Errorf("failed to delete all markers: %w", err)
+	}
+
+	return nil
+}
+
+// IRAC Notes management methods
+func (ms *MarkerService) GetIRACNotes() ([]models.IRACNote, error) {
+	return ms.iracNotesRepo.GetAllNotes()
+}
+
+func (ms *MarkerService) GetIRACNotesByCategory(category string) ([]models.IRACNote, error) {
+	return ms.iracNotesRepo.GetNotesByCategory(category)
+}
+
+func (ms *MarkerService) SearchIRACNotes(searchTerm string) ([]models.IRACNote, error) {
+	return ms.iracNotesRepo.SearchNotes(searchTerm)
+}
+
+// services/marker_service.go (continued)
+func (ms *MarkerService) AddIRACNoteToMarker(markerID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	id, err := uuid.Parse(markerID)
+	if err != nil {
+		return fmt.Errorf("invalid marker ID: %w", err)
+	}
+
+	return ms.markerRepo.AddIRACNote(id, noteCode, fieldNumber, occurrenceNumber)
+}
+
+func (ms *MarkerService) RemoveIRACNoteFromMarker(markerID, noteCode string, fieldNumber, occurrenceNumber int) error {
+	id, err := uuid.Parse(markerID)
+	if err != nil {
+		return fmt.Errorf("invalid marker ID: %w", err)
+	}
+
+	return ms.markerRepo.RemoveIRACNote(id, noteCode, fieldNumber, occurrenceNumber)
+}
+// serial_service.go
+package services
+
+import (
+	"fmt"
+	"sync"
+)
+
+type SerialService struct {
+	counter int
+	mutex   sync.Mutex
+}
+
+func NewSerialService() *SerialService {
+	return &SerialService{counter: 1}
+}
+
+func (ss *SerialService) GenerateSerial() string {
+	ss.mutex.Lock()
+	defer ss.mutex.Unlock()
+
+	serial := fmt.Sprintf("FREQ%06d", ss.counter)
+	ss.counter++
+	return serial
+}
+// sfaf_service.go
+package services
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"log"
+	"sfaf-plotter/models"
+	"sfaf-plotter/storage"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type SFAFService struct {
+	storage      storage.Storage
+	coordService *CoordinateService
+	fieldDefs    map[string]models.SFAFFormDefinition
+}
+
+func (ss *SFAFService) ImportSFAFFile(file io.Reader, filename string) ([]models.Marker, []models.SFAF, error) {
+	scanner := bufio.NewScanner(file)
+	var allMarkers []models.Marker
+	var allSfafRecords []models.SFAF
+
+	// Parse multiple SFAF records in one file
+	currentSfafData := make(map[string]string)
+	currentField := ""
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Empty line or "---" might indicate new record
+		if line == "" || line == "---" || line == "END" {
+			// Process current record if it has coordinates
+			if coords := currentSfafData["field303"]; coords != "" {
+				marker, sfaf := ss.processSingleSFAFRecord(currentSfafData)
+				if marker != nil && sfaf != nil {
+					allMarkers = append(allMarkers, *marker)
+					allSfafRecords = append(allSfafRecords, *sfaf)
+				}
+			}
+			// Reset for next record
+			currentSfafData = make(map[string]string)
+			currentField = ""
+			continue
+		}
+
+		// Parse fields (same logic as before)
+		if strings.Contains(line, ".") && !strings.HasPrefix(line, " ") {
+			parts := strings.SplitN(line, ".", 2)
+			if len(parts) == 2 {
+				fieldID := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+
+				currentField = "field" + fieldID
+
+				if value != "" && value != "$" {
+					if existing, exists := currentSfafData[currentField]; exists && (fieldID == "502" || fieldID == "520") {
+						currentSfafData[currentField] = existing + " " + value
+					} else {
+						currentSfafData[currentField] = value
+					}
+				}
+			}
+		} else if currentField != "" && (strings.HasPrefix(currentField, "field502") || strings.HasPrefix(currentField, "field520")) {
+			if line != "$" {
+				currentSfafData[currentField] += " " + line
+			}
+		}
+	}
+
+	// Process final record
+	if coords := currentSfafData["field303"]; coords != "" {
+		marker, sfaf := ss.processSingleSFAFRecord(currentSfafData)
+		if marker != nil && sfaf != nil {
+			allMarkers = append(allMarkers, *marker)
+			allSfafRecords = append(allSfafRecords, *sfaf)
+		}
+	}
+
+	return allMarkers, allSfafRecords, nil
+}
+
+// Helper method to process a single SFAF record WITHOUT saving
+func (ss *SFAFService) processSingleSFAFRecord(sfafData map[string]string) (*models.Marker, *models.SFAF) {
+	coords := sfafData["field303"]
+	if coords != "" {
+		lat, lng, err := ss.parseCoordinates(coords)
+		if err == nil {
+			// Create marker object (don't save yet)
+			marker := models.Marker{
+				ID:          uuid.New(),
+				Serial:      sfafData["field102"],
+				Latitude:    lat,
+				Longitude:   lng,
+				Frequency:   sfafData["field110"], // Keep full frequency
+				Notes:       ss.buildComprehensiveNotes(sfafData),
+				MarkerType:  "imported",
+				IsDraggable: false,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			}
+
+			// Create SFAF object (don't save yet)
+			sfaf := models.SFAF{
+				ID:        uuid.New(),
+				MarkerID:  marker.ID, // Use the SAME ID as the marker
+				Fields:    sfafData,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			return &marker, &sfaf
+		}
+	}
+
+	return nil, nil
+}
+
+func (ss *SFAFService) GetCoordinateFormats(lat, lng float64) models.CoordinateResponse {
+	return ss.coordService.GetAllFormats(lat, lng)
+}
+
+func (ss *SFAFService) CreateSFAFWithoutValidation(req models.CreateSFAFRequest) (*models.SFAF, error) {
+	// Convert string MarkerID to UUID
+	markerUUID, err := uuid.Parse(req.MarkerID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid marker ID format: %v", err)
+	}
+
+	sfaf := &models.SFAF{
+		ID:        uuid.New(), // ✅ Direct UUID
+		MarkerID:  markerUUID, // ✅ Converted UUID variable
+		Fields:    req.Fields,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Save to storage
+	if err := ss.storage.SaveSFAF(sfaf); err != nil {
+		return nil, err
+	}
+
+	return sfaf, nil
+}
+
+// Helper method to process a single SFAF record
+func (ss *SFAFService) processSingleSFAF(sfafData map[string]string) ([]models.Marker, []models.SFAF) {
+	var markers []models.Marker
+	var sfafRecords []models.SFAF
+
+	coords := sfafData["field303"]
+	if coords != "" {
+		lat, lng, err := ss.parseCoordinates(coords)
+		if err == nil {
+			marker := models.Marker{
+				ID:          uuid.New(),
+				Serial:      sfafData["field102"],
+				Latitude:    lat,
+				Longitude:   lng,
+				Frequency:   sfafData["field110"], // Keep FULL frequency with K prefix
+				Notes:       ss.buildComprehensiveNotes(sfafData),
+				MarkerType:  "imported",
+				IsDraggable: false,
+				CreatedAt:   time.Now(),
+				UpdatedAt:   time.Now(),
+			}
+
+			sfaf := &models.SFAF{
+				ID:        uuid.New(),
+				MarkerID:  marker.ID,
+				Fields:    sfafData,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+
+			if err := ss.storage.SaveSFAF(sfaf); err == nil {
+				markers = append(markers, marker)
+				sfafRecords = append(sfafRecords, *sfaf)
+			}
+		}
+	}
+
+	return markers, sfafRecords
+}
+
+func (ss *SFAFService) parseCoordinates(coords string) (float64, float64, error) {
+	// Parse format: DDMMSSXDDDMMSSZ (e.g., 302521N0864150W)
+	if len(coords) < 15 {
+		return 0, 0, fmt.Errorf("invalid coordinate format: %s", coords)
+	}
+
+	// Extract latitude: DDMMSS + N/S (first 7 chars)
+	latStr := coords[:6]  // DDMMSS
+	latDir := coords[6:7] // N or S
+
+	// Extract longitude: DDDMMSS + E/W (remaining chars)
+	lngStr := coords[7:14]  // DDDMMSS (note: 7 digits for longitude)
+	lngDir := coords[14:15] // E or W
+
+	fmt.Printf("🔍 Parsing coords: %s -> lat:%s%s lng:%s%s\n", coords, latStr, latDir, lngStr, lngDir)
+
+	lat, err := ss.dmsToDecimal(latStr, latDir)
+	if err != nil {
+		return 0, 0, fmt.Errorf("latitude error: %v", err)
+	}
+
+	lng, err := ss.dmsToDecimal(lngStr, lngDir)
+	if err != nil {
+		return 0, 0, fmt.Errorf("longitude error: %v", err)
+	}
+
+	fmt.Printf("🌍 Final coordinates: lat=%.6f, lng=%.6f\n", lat, lng)
+	return lat, lng, nil
+}
+
+func (ss *SFAFService) dmsToDecimal(dmsStr, direction string) (float64, error) {
+	if len(dmsStr) < 6 {
+		return 0, fmt.Errorf("invalid DMS format: %s", dmsStr)
+	}
+
+	var degrees, minutes, seconds float64
+
+	if len(dmsStr) == 6 {
+		// Latitude format: DDMMSS (2 digits degrees)
+		degrees, _ = strconv.ParseFloat(dmsStr[:2], 64)
+		minutes, _ = strconv.ParseFloat(dmsStr[2:4], 64)
+		seconds, _ = strconv.ParseFloat(dmsStr[4:6], 64)
+	} else if len(dmsStr) == 7 {
+		// Longitude format: DDDMMSS (3 digits degrees)
+		degrees, _ = strconv.ParseFloat(dmsStr[:3], 64)
+		minutes, _ = strconv.ParseFloat(dmsStr[3:5], 64)
+		seconds, _ = strconv.ParseFloat(dmsStr[5:7], 64)
+	} else {
+		return 0, fmt.Errorf("invalid DMS length: %s", dmsStr)
+	}
+
+	fmt.Printf("   DMS parts: %s -> D:%.0f M:%.0f S:%.0f Dir:%s\n", dmsStr, degrees, minutes, seconds, direction)
+
+	decimal := degrees + (minutes / 60.0) + (seconds / 3600.0)
+
+	if direction == "S" || direction == "W" {
+		decimal = -decimal
+	}
+
+	fmt.Printf("   Result: %.6f\n", decimal)
+	return decimal, nil
+}
+
+// Update your existing extractFrequency method or add if it doesn't exist
+func (ss *SFAFService) extractFrequency(freqField string) string {
+	return freqField
+}
+
+func (ss *SFAFService) buildComprehensiveNotes(sfafData map[string]string) string {
+	var notes []string
+
+	// Primary identification - preserve exact formatting
+	if agency := sfafData["field200"]; agency != "" {
+		notes = append(notes, "Agency: "+agency)
+	}
+
+	if location := sfafData["field301"]; location != "" {
+		notes = append(notes, "Location: "+location)
+	}
+
+	if equipment := sfafData["field340"]; equipment != "" {
+		notes = append(notes, "Equipment: "+equipment)
+	}
+
+	// Purpose (truncated for notes but preserve original formatting)
+	if purpose := sfafData["field502"]; purpose != "" {
+		truncated := purpose
+		if len(purpose) > 100 {
+			truncated = purpose[:100] + "..."
+		}
+		notes = append(notes, "Purpose: "+truncated)
+	}
+
+	return strings.Join(notes, " | ")
+}
+
+func NewSFAFService(storage storage.Storage, coordService *CoordinateService) *SFAFService {
+	service := &SFAFService{
+		storage:      storage,
+		coordService: coordService,
+		fieldDefs:    make(map[string]models.SFAFFormDefinition),
+	}
+
+	service.initializeFieldDefinitions()
+	return service
+}
+
+// Auto-populate SFAF fields from marker data
+
+func (ss *SFAFService) AutoPopulateFromMarker(marker *models.Marker) map[string]string {
+	fields := make(map[string]string)
+
+	if marker.Latitude != 0 && marker.Longitude != 0 {
+		compactCoords := ss.coordService.ConvertLatLngToCompactDMS(marker.Latitude, marker.Longitude)
+		fields["field303"] = compactCoords // Transmitter coordinates
+		fields["field403"] = compactCoords // Receiver coordinates
+	}
+
+	if marker.Frequency != "" {
+		fields["field400"] = marker.Frequency
+	}
+
+	if marker.Serial != "" {
+		fields["field101"] = marker.Serial
+	}
+
+	return fields
+}
+
+func (ss *SFAFService) GetFieldDefinitions() map[string]models.SFAFFormDefinition {
+	return ss.fieldDefs
+}
+
+// Validate SFAF fields
+func (ss *SFAFService) ValidateFields(fields map[string]string) models.ValidationResult {
+	result := models.ValidationResult{
+		IsValid: true,
+		Errors:  make(map[string]string),
+		Fields:  make(map[string]models.SFAFFormDefinition),
+	}
+
+	// Check all defined fields
+	for fieldID, fieldDef := range ss.fieldDefs {
+		value, exists := fields[fieldID]
+
+		// Copy field definition and add current value
+		resultField := fieldDef
+		resultField.Validation = value
+		result.Fields[fieldID] = resultField
+
+		// Validate required fields
+		if fieldDef.Required && (!exists || strings.TrimSpace(value) == "") {
+			result.IsValid = false
+			result.Errors[fieldID] = fmt.Sprintf("%s is required", fieldDef.Label)
+			continue
+		}
+
+		// Validate field-specific rules
+		if exists && value != "" {
+			if err := ss.validateField(fieldID, value, fieldDef); err != nil {
+				result.IsValid = false
+				result.Errors[fieldID] = err.Error()
+			}
+		}
+	}
+
+	return result
+}
+
+// Validate individual field
+func (ss *SFAFService) validateField(fieldID, value string, fieldDef models.SFAFFormDefinition) error {
+	switch fieldDef.FieldType {
+	case "number":
+		if _, err := strconv.ParseFloat(value, 64); err != nil {
+			return fmt.Errorf("%s must be a valid number", fieldDef.Label)
+		}
+	case "email":
+		if !strings.Contains(value, "@") {
+			return fmt.Errorf("%s must be a valid email address", fieldDef.Label)
+		}
+	case "date":
+		if _, err := time.Parse("2006-01-02", value); err != nil {
+			return fmt.Errorf("%s must be a valid date (YYYY-MM-DD)", fieldDef.Label)
+		}
+	}
+
+	// Field-specific validation
+	switch fieldID {
+	case "field303", "field403": // Coordinate fields
+		if !ss.isValidCoordinateFormat(value) {
+			return fmt.Errorf("invalid coordinate format (expected: DDMMSSXDDDMMSSZ)")
+		}
+	case "field306": // Authorization radius
+		if !ss.isValidRadiusFormat(value) {
+			return fmt.Errorf("invalid radius format (expected: number optionally followed by B or T)")
+		}
+	case "field400", "field401": // Frequency fields
+		if val, err := strconv.ParseFloat(value, 64); err != nil || val <= 0 {
+			return fmt.Errorf("frequency must be a positive number")
+		}
+	}
+
+	// Validate select options
+	if fieldDef.FieldType == "select" && len(fieldDef.Options) > 0 {
+		valid := false
+		for _, option := range fieldDef.Options {
+			if value == option {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			return fmt.Errorf("invalid option for %s", fieldDef.Label)
+		}
+	}
+
+	return nil
+}
+
+// Create SFAF
+func (ss *SFAFService) CreateSFAF(req models.CreateSFAFRequest) (*models.SFAF, error) {
+	// Validate fields first
+	validation := ss.ValidateFields(req.Fields)
+	if !validation.IsValid {
+		return nil, fmt.Errorf("validation failed")
+	}
+
+	// Convert string MarkerID to UUID - THIS IS THE FIX
+	markerUUID, err := uuid.Parse(req.MarkerID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid marker ID format: %v", err)
+	}
+
+	sfaf := &models.SFAF{
+		ID:        uuid.New(), // ✅ Generates new UUID value
+		MarkerID:  markerUUID, // ✅ Uses converted UUID value
+		Fields:    req.Fields,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	// Save to storage
+	if err := ss.storage.SaveSFAF(sfaf); err != nil {
+		return nil, err
+	}
+
+	return sfaf, nil
+}
+
+// Update SFAF
+func (ss *SFAFService) UpdateSFAF(sfafID string, req models.UpdateSFAFRequest) (*models.SFAF, error) {
+	// Get existing SFAF
+	sfaf, err := ss.storage.GetSFAF(sfafID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update fields
+	sfaf.Fields = req.Fields
+	sfaf.UpdatedAt = time.Now()
+
+	// Validate updated fields
+	validation := ss.ValidateFields(sfaf.Fields)
+	if !validation.IsValid {
+		return nil, fmt.Errorf("validation failed")
+	}
+
+	// Save updated SFAF
+	if err := ss.storage.SaveSFAF(sfaf); err != nil {
+		return nil, err
+	}
+
+	return sfaf, nil
+}
+
+// Helper validation functions
+func (ss *SFAFService) isValidCoordinateFormat(coord string) bool {
+	// Basic validation for coordinate format like "302521N0864150W"
+	if len(coord) < 13 || len(coord) > 15 {
+		return false
+	}
+
+	// Check for valid direction letters
+	hasValidDir := strings.ContainsAny(coord, "NSEW")
+	return hasValidDir
+}
+
+func (ss *SFAFService) isValidRadiusFormat(radius string) bool {
+	if radius == "" {
+		return true // Optional field
+	}
+
+	// Remove B or T suffix
+	cleanRadius := strings.TrimRight(radius, "BTbt")
+	_, err := strconv.ParseFloat(cleanRadius, 64)
+	return err == nil
+}
+
+func (ss *SFAFService) GetSFAFByMarkerID(markerID string) (*models.SFAF, error) {
+	log.Printf("🔍 Looking for SFAF data for marker: %s", markerID)
+
+	// Use the storage method that already exists
+	sfaf, err := ss.storage.GetSFAFByMarkerID(markerID)
+	if err != nil {
+		log.Printf("❌ Storage GetSFAFByMarkerID failed: %v", err)
+		return nil, err
+	}
+
+	log.Printf("✅ Found SFAF with %d fields for marker %s", len(sfaf.Fields), markerID)
+	return sfaf, nil // ✅ Return the full SFAF object
+}
+
+// Export SFAF data in various formats
+func (ss *SFAFService) ExportSFAF(sfafID string, format models.SFAFExportFormat) ([]byte, error) {
+	sfaf, err := ss.storage.GetSFAF(sfafID)
+	if err != nil {
+		return nil, err
+	}
+
+	switch format {
+	case models.SFAFExportJSON:
+		return ss.exportToJSON(sfaf)
+	case models.SFAFExportCSV:
+		return ss.exportToCSV(sfaf)
+	case models.SFAFExportXML:
+		return ss.exportToXML(sfaf)
+	default:
+		return nil, fmt.Errorf("unsupported export format: %s", format)
+	}
+}
+
+// Export helper functions
+func (ss *SFAFService) exportToJSON(sfaf *models.SFAF) ([]byte, error) {
+	// Create structured export data
+	exportData := map[string]interface{}{
+		"sfaf_id":    sfaf.ID,
+		"marker_id":  sfaf.MarkerID,
+		"created_at": sfaf.CreatedAt,
+		"updated_at": sfaf.UpdatedAt,
+		"fields":     sfaf.Fields,
+		"field_defs": ss.fieldDefs,
+	}
+
+	return []byte(fmt.Sprintf("%+v", exportData)), nil
+}
+
+func (ss *SFAFService) exportToCSV(sfaf *models.SFAF) ([]byte, error) {
+	csv := "Field,Label,Value\n"
+	for fieldID, value := range sfaf.Fields {
+		if fieldDef, exists := ss.fieldDefs[fieldID]; exists {
+			csv += fmt.Sprintf("%s,%s,%s\n", fieldID, fieldDef.Label, value)
+		}
+	}
+	return []byte(csv), nil
+}
+
+func (ss *SFAFService) exportToXML(sfaf *models.SFAF) ([]byte, error) {
+	xml := "<sfaf>\n"
+	for fieldID, value := range sfaf.Fields {
+		if fieldDef, exists := ss.fieldDefs[fieldID]; exists {
+			xml += fmt.Sprintf("  <%s label=\"%s\">%s</%s>\n", fieldID, fieldDef.Label, value, fieldID)
+		}
+	}
+	xml += "</sfaf>"
+	return []byte(xml), nil
+}
+
+func (ss *SFAFService) DeleteSFAF(id string) error {
+	return ss.storage.DeleteSFAF(id)
+}
+
+// Initialize complete SFAF field definitions based on MCEBPub7.csv
+func (ss *SFAFService) initializeFieldDefinitions() {
+	ss.fieldDefs = map[string]models.SFAFFormDefinition{
+		// 100 Series - Agency Information
+		"field100": {
+			FieldNumber: "field100", Label: "Agency Code", Required: true, FieldType: "select",
+			Options: []string{"DOD", "DHS", "DOJ", "NASA", "NOAA", "FAA", "FCC", "Other"},
+			Help:    "Federal agency requesting frequency assignment",
+		},
+		"field101": {
+			FieldNumber: "field101", Label: "Agency Serial Number", Required: true, FieldType: "text",
+			Help: "Unique identifier assigned by requesting agency",
+		},
+		"field102": {
+			FieldNumber: "field102", Label: "Date of Application", Required: true, FieldType: "date",
+			Help: "Date application was submitted",
+		},
+		"field103": {
+			FieldNumber: "field103", Label: "Expiration Date", Required: false, FieldType: "date",
+			Help: "Requested expiration date for assignment",
+		},
+		"field104": {
+			FieldNumber: "field104", Label: "Previous Assignment", Required: false, FieldType: "text",
+			Help: "Reference to previous related assignment",
+		},
+
+		// 200 Series - System Information
+		"field200": {
+			FieldNumber: "field200", Label: "System Name", Required: true, FieldType: "text",
+			Help: "Name or designation of the radio system",
+		},
+		"field201": {
+			FieldNumber: "field201", Label: "System Type", Required: true, FieldType: "select",
+			Options: []string{"Fixed", "Mobile", "Portable", "Aeronautical", "Maritime", "Satellite"},
+			Help:    "Type of radio system",
+		},
+		"field202": {
+			FieldNumber: "field202", Label: "Service Type", Required: true, FieldType: "select",
+			Options: []string{"Government Fixed", "Government Mobile", "Radiolocation", "Radionavigation", "Satellite", "Broadcasting"},
+			Help:    "ITU radio service classification",
+		},
+		"field203": {
+			FieldNumber: "field203", Label: "Purpose", Required: true, FieldType: "textarea",
+			Help: "Detailed description of system purpose and mission",
+		},
+
+		// 300 Series - Location Information
+		"field300": {
+			FieldNumber: "field300", Label: "State/Country", Required: true, FieldType: "select",
+			Options: []string{"AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"},
+			Help:    "State or country where transmitter is located",
+		},
+		"field301": {
+			FieldNumber: "field301", Label: "Antenna Location", Required: true, FieldType: "text",
+			Help: "Physical description of antenna location",
+		},
+		"field302": {
+			FieldNumber: "field302", Label: "Site Name", Required: false, FieldType: "text",
+			Help: "Name of the site or facility",
+		},
+		"field303": {
+			FieldNumber: "field303", Label: "Antenna Coordinates", Required: true, FieldType: "text",
+			Help: "Format: DDMMSSXDDDMMSSZ (e.g., 302521N0864150W)",
+		},
+		"field304": {
+			FieldNumber: "field304", Label: "Ground Elevation (m)", Required: false, FieldType: "number",
+			Help: "Antenna site elevation above mean sea level in meters",
+		},
+		"field305": {
+			FieldNumber: "field305", Label: "Antenna Height AGL (m)", Required: false, FieldType: "number",
+			Help: "Antenna height above ground level in meters",
+		},
+		"field306": {
+			FieldNumber: "field306", Label: "Authorization Radius (km)", Required: false, FieldType: "text",
+			Help: "Coordination radius in kilometers (append B for basic, T for tactical)",
+		},
+		"field307": {
+			FieldNumber: "field307", Label: "Area of Operation", Required: false, FieldType: "textarea",
+			Help: "Geographic description of operational area",
+		},
+
+		// 400 Series - Technical Parameters
+		"field400": {
+			FieldNumber: "field400", Label: "Frequency (MHz)", Required: true, FieldType: "number",
+			Help: "Operating frequency in megahertz",
+		},
+		"field401": {
+			FieldNumber: "field401", Label: "Alternate Frequency (MHz)", Required: false, FieldType: "number",
+			Help: "Backup or alternate operating frequency",
+		},
+		"field402": {
+			FieldNumber: "field402", Label: "Power (Watts)", Required: false, FieldType: "number",
+			Help: "Transmitter power output in watts",
+		},
+		"field403": {
+			FieldNumber: "field403", Label: "ERP (Watts)", Required: false, FieldType: "number",
+			Help: "Effective radiated power in watts",
+		},
+		"field404": {
+			FieldNumber: "field404", Label: "Emission Designator", Required: false, FieldType: "text",
+			Help: "ITU emission designation (e.g., 16K0F3E)",
+		},
+		"field405": {
+			FieldNumber: "field405", Label: "Bandwidth (kHz)", Required: false, FieldType: "number",
+			Help: "Occupied bandwidth in kilohertz",
+		},
+		"field406": {
+			FieldNumber: "field406", Label: "Modulation", Required: false, FieldType: "select",
+			Options: []string{"AM", "FM", "PM", "DSB", "SSB", "CW", "FSK", "PSK", "QAM", "OFDM", "Digital"},
+			Help:    "Type of modulation employed",
+		},
+		"field407": {
+			FieldNumber: "field407", Label: "Tolerance (Hz)", Required: false, FieldType: "number",
+			Help: "Frequency tolerance in hertz",
+		},
+		"field408": {
+			FieldNumber: "field408", Label: "Stability", Required: false, FieldType: "text",
+			Help: "Frequency stability specification",
+		},
+		"field409": {
+			FieldNumber: "field409", Label: "Spurious Emissions", Required: false, FieldType: "text",
+			Help: "Spurious emission compliance standard",
+		},
+
+		// 500 Series - Equipment Information
+		"field500": {
+			FieldNumber: "field500", Label: "Transmitter Make", Required: false, FieldType: "text",
+			Help: "Manufacturer of transmitter equipment",
+		},
+		"field501": {
+			FieldNumber: "field501", Label: "Transmitter Model", Required: false, FieldType: "text",
+			Help: "Model number of transmitter",
+		},
+		"field502": {
+			FieldNumber: "field502", Label: "Transmitter S/N", Required: false, FieldType: "text",
+			Help: "Serial number of transmitter",
+		},
+		"field503": {
+			FieldNumber: "field503", Label: "Receiver Make", Required: false, FieldType: "text",
+			Help: "Manufacturer of receiver equipment",
+		},
+		"field504": {
+			FieldNumber: "field504", Label: "Receiver Model", Required: false, FieldType: "text",
+			Help: "Model number of receiver",
+		},
+		"field505": {
+			FieldNumber: "field505", Label: "Receiver S/N", Required: false, FieldType: "text",
+			Help: "Serial number of receiver",
+		},
+		"field506": {
+			FieldNumber: "field506", Label: "Antenna Make/Model", Required: false, FieldType: "text",
+			Help: "Antenna manufacturer and model number",
+		},
+		"field507": {
+			FieldNumber: "field507", Label: "Antenna Type", Required: false, FieldType: "select",
+			Options: []string{"Omnidirectional", "Directional", "Yagi", "Parabolic", "Helical", "Loop", "Whip", "Other"},
+			Help:    "Type of antenna used",
+		},
+		"field508": {
+			FieldNumber: "field508", Label: "Antenna Gain (dBi)", Required: false, FieldType: "number",
+			Help: "Antenna gain in decibels relative to isotropic",
+		},
+		"field509": {
+			FieldNumber: "field509", Label: "Antenna Pattern", Required: false, FieldType: "text",
+			Help: "Antenna radiation pattern description",
+		},
+		"field510": {
+			FieldNumber: "field510", Label: "Antenna Polarization", Required: false, FieldType: "select",
+			Options: []string{"Horizontal", "Vertical", "Circular", "Elliptical"},
+			Help:    "Antenna polarization type",
+		},
+		"field511": {
+			FieldNumber: "field511", Label: "Feeder Loss (dB)", Required: false, FieldType: "number",
+			Help: "Transmission line loss in decibels",
+		},
+
+		// 600 Series - Operational Information
+		"field600": {
+			FieldNumber: "field600", Label: "Hours of Operation", Required: false, FieldType: "text",
+			Help: "Operating schedule (e.g., 24/7, 0800-1700 EST)",
+		},
+		"field601": {
+			FieldNumber: "field601", Label: "Days of Operation", Required: false, FieldType: "text",
+			Help: "Days when system operates (e.g., Mon-Fri, Daily)",
+		},
+		"field602": {
+			FieldNumber: "field602", Label: "Months of Operation", Required: false, FieldType: "text",
+			Help: "Seasonal operation months",
+		},
+		"field603": {
+			FieldNumber: "field603", Label: "Number of Transmitters", Required: false, FieldType: "number",
+			Help: "Total number of transmitters in system",
+		},
+		"field604": {
+			FieldNumber: "field604", Label: "Number of Receivers", Required: false, FieldType: "number",
+			Help: "Total number of receivers in system",
+		},
+		"field605": {
+			FieldNumber: "field605", Label: "Traffic Volume", Required: false, FieldType: "text",
+			Help: "Expected traffic volume or duty cycle",
+		},
+		"field606": {
+			FieldNumber: "field606", Label: "Critical Infrastructure", Required: false, FieldType: "select",
+			Options: []string{"Yes", "No"},
+			Help:    "Is this system critical infrastructure?",
+		},
+		"field607": {
+			FieldNumber: "field607", Label: "Emergency Communications", Required: false, FieldType: "select",
+			Options: []string{"Yes", "No"},
+			Help:    "Used for emergency communications?",
+		},
+
+		// 700 Series - Coordination Information
+		"field700": {
+			FieldNumber: "field700", Label: "Coordination Required", Required: false, FieldType: "select",
+			Options: []string{"Yes", "No", "Unknown"},
+			Help:    "Is frequency coordination required?",
+		},
+		"field701": {
+			FieldNumber: "field701", Label: "Coordination Agency", Required: false, FieldType: "text",
+			Help: "Agency responsible for coordination",
+		},
+		"field702": {
+			FieldNumber: "field702", Label: "International Coordination", Required: false, FieldType: "select",
+			Options: []string{"Yes", "No"},
+			Help:    "International coordination required?",
+		},
+		"field703": {
+			FieldNumber: "field703", Label: "Border Distance (km)", Required: false, FieldType: "number",
+			Help: "Distance to nearest international border",
+		},
+		"field704": {
+			FieldNumber: "field704", Label: "Satellite Coordination", Required: false, FieldType: "select",
+			Options: []string{"Yes", "No"},
+			Help:    "Satellite coordination required?",
+		},
+
+		// 800 Series - Administrative Information
+		"field800": {
+			FieldNumber: "field800", Label: "POC Name", Required: false, FieldType: "text",
+			Help: "Primary point of contact name",
+		},
+		"field801": {
+			FieldNumber: "field801", Label: "POC Title", Required: false, FieldType: "text",
+			Help: "Point of contact title/position",
+		},
+		"field802": {
+			FieldNumber: "field802", Label: "POC Phone", Required: false, FieldType: "text",
+			Help: "Point of contact phone number",
+		},
+		"field803": {
+			FieldNumber: "field803", Label: "POC Email", Required: false, FieldType: "email",
+			Help: "Point of contact email address",
+		},
+		"field804": {
+			FieldNumber: "field804", Label: "Organization", Required: false, FieldType: "text",
+			Help: "Requesting organization or unit",
+		},
+		"field805": {
+			FieldNumber: "field805", Label: "Address Line 1", Required: false, FieldType: "text",
+			Help: "Organization address",
+		},
+		"field806": {
+			FieldNumber: "field806", Label: "Address Line 2", Required: false, FieldType: "text",
+			Help: "Additional address information",
+		},
+		"field807": {
+			FieldNumber: "field807", Label: "City", Required: false, FieldType: "text",
+			Help: "City",
+		},
+		"field808": {
+			FieldNumber: "field808", Label: "State/Province", Required: false, FieldType: "text",
+			Help: "State or province",
+		},
+		"field809": {
+			FieldNumber: "field809", Label: "Postal Code", Required: false, FieldType: "text",
+			Help: "ZIP or postal code",
+		},
+
+		// 900 Series - Comments and Special Requirements
+		"field900": {
+			FieldNumber: "field900", Label: "IRAC Notes", Required: false, FieldType: "textarea",
+			Help: "Notes for IRAC review and coordination",
+		},
+		"field901": {
+			FieldNumber: "field901", Label: "Technical Comments", Required: false, FieldType: "textarea",
+			Help: "Technical notes and specifications",
+		},
+		"field902": {
+			FieldNumber: "field902", Label: "Operational Comments", Required: false, FieldType: "textarea",
+			Help: "Operational requirements and constraints",
+		},
+		"field903": {
+			FieldNumber: "field903", Label: "Regulatory Comments", Required: false, FieldType: "textarea",
+			Help: "Regulatory compliance notes",
+		},
+		"field904": {
+			FieldNumber: "field904", Label: "General Comments", Required: false, FieldType: "textarea",
+			Help: "Additional comments and information",
+		},
+	}
+}
+package storage
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+
+	"sfaf-plotter/models"
+
+	"github.com/google/uuid"
+)
+
+type JSONStorage struct {
+	mutex      sync.RWMutex
+	dataDir    string
+	markers    map[uuid.UUID]*models.Marker   // ✅ UUID keys match model
+	sfafs      map[uuid.UUID]*models.SFAF     // ✅ UUID keys match model
+	geometries map[uuid.UUID]*models.Geometry // ADD GEOMETRY STORAGE
+
+}
+
+type JSONData struct {
+	Markers    map[string]*models.Marker   `json:"markers"` // ✅ String for JSON serialization
+	SFAFs      map[string]*models.SFAF     `json:"sfafs"`   // ✅ String for JSON serialization
+	Version    string                      `json:"version"`
+	Geometries map[string]*models.Geometry `json:"geometries"`
+}
+
+func NewJSONStorage(dataDir string) (*JSONStorage, error) {
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
+	}
+
+	storage := &JSONStorage{
+		dataDir: dataDir,
+		markers: make(map[uuid.UUID]*models.Marker), // ✅ UUID maps
+		sfafs:   make(map[uuid.UUID]*models.SFAF),   // ✅ UUID maps
+	}
+
+	if err := storage.loadFromFile(); err != nil {
+		fmt.Printf("Starting with fresh data: %v\n", err)
+	}
+
+	return storage, nil
+}
+
+func (js *JSONStorage) loadFromFile() error {
+	filePath := filepath.Join(js.dataDir, "data.json")
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	var jsonData JSONData
+	if err := json.Unmarshal(data, &jsonData); err != nil {
+		return err
+	}
+
+	// Convert string maps back to UUID maps
+	js.markers = make(map[uuid.UUID]*models.Marker)
+	for idStr, marker := range jsonData.Markers {
+		if id, err := uuid.Parse(idStr); err == nil {
+			js.markers[id] = marker
+		}
+	}
+
+	js.sfafs = make(map[uuid.UUID]*models.SFAF)
+	for idStr, sfaf := range jsonData.SFAFs {
+		if id, err := uuid.Parse(idStr); err == nil {
+			js.sfafs[id] = sfaf
+		}
+	}
+
+	return nil
+}
+
+func (js *JSONStorage) saveToFile() error {
+	filePath := filepath.Join(js.dataDir, "data.json")
+
+	// Convert UUID maps to string maps for JSON serialization
+	stringMarkers := make(map[string]*models.Marker)
+	for id, marker := range js.markers {
+		stringMarkers[id.String()] = marker
+	}
+
+	stringSFAFs := make(map[string]*models.SFAF)
+	for id, sfaf := range js.sfafs {
+		stringSFAFs[id.String()] = sfaf
+	}
+
+	jsonData := JSONData{
+		Markers: stringMarkers,
+		SFAFs:   stringSFAFs,
+		Version: "1.0",
+	}
+
+	data, err := json.MarshalIndent(jsonData, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	tempFile := filePath + ".tmp"
+	if err := os.WriteFile(tempFile, data, 0644); err != nil {
+		return err
+	}
+	return os.Rename(tempFile, filePath)
+}
+
+// Marker storage methods
+func (js *JSONStorage) SaveMarker(marker *models.Marker) error {
+	js.mutex.Lock()
+	defer js.mutex.Unlock()
+
+	js.markers[marker.ID] = marker
+	return js.saveToFile()
+}
+
+func (js *JSONStorage) GetMarker(id string) (*models.Marker, error) {
+	markerID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid marker ID format: %v", err)
+	}
+
+	js.mutex.RLock()
+	defer js.mutex.RUnlock()
+
+	marker, exists := js.markers[markerID]
+	if !exists {
+		return nil, fmt.Errorf("marker not found")
+	}
+	return marker, nil
+}
+
+func (js *JSONStorage) GetAllMarkers() ([]*models.Marker, error) {
+	js.mutex.RLock()
+	defer js.mutex.RUnlock()
+
+	markers := make([]*models.Marker, 0, len(js.markers))
+	for _, marker := range js.markers {
+		markers = append(markers, marker)
+	}
+	return markers, nil
+}
+
+func (js *JSONStorage) UpdateMarker(id string, marker *models.Marker) error {
+	// Convert string ID to UUID
+	markerUUID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid marker ID format: %v", err)
+	}
+
+	js.mutex.Lock()
+	defer js.mutex.Unlock()
+
+	if _, exists := js.markers[markerUUID]; !exists { // ✅ UUID key lookup
+		return fmt.Errorf("marker not found")
+	}
+
+	js.markers[markerUUID] = marker // ✅ UUID key assignment
+	return js.saveToFile()
+}
+
+func (js *JSONStorage) DeleteMarker(id string) error {
+	markerID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid marker ID format: %v", err)
+	}
+
+	js.mutex.Lock()
+	defer js.mutex.Unlock()
+	delete(js.markers, markerID)
+	return js.saveToFile()
+}
+
+// SFAF storage methods
+func (js *JSONStorage) SaveSFAF(sfaf *models.SFAF) error {
+	js.mutex.Lock()
+	defer js.mutex.Unlock()
+	js.sfafs[sfaf.ID] = sfaf // ✅ Now compatible: uuid.UUID to uuid.UUID
+	return js.saveToFile()
+}
+
+func (js *JSONStorage) GetSFAF(id string) (*models.SFAF, error) {
+	// Convert string API input to UUID for internal map lookup
+	sfafID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SFAF ID format: %v", err)
+	}
+
+	js.mutex.RLock()
+	defer js.mutex.RUnlock()
+
+	sfaf, exists := js.sfafs[sfafID] // ✅ Now using UUID key
+	if !exists {
+		return nil, fmt.Errorf("SFAF not found")
+	}
+	return sfaf, nil
+}
+
+func (js *JSONStorage) GetSFAFByMarkerID(markerID string) (*models.SFAF, error) {
+	// Convert string input to UUID for comparison
+	markerUUID, err := uuid.Parse(markerID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid marker ID format: %v", err)
+	}
+
+	js.mutex.RLock()
+	defer js.mutex.RUnlock()
+
+	fmt.Printf("🔍 Searching for SFAF with MarkerID: %s\n", markerID)
+	fmt.Printf("🔍 Total SFAF records in storage: %d\n", len(js.sfafs))
+
+	for sfafID, sfaf := range js.sfafs {
+		fmt.Printf("🔍 SFAF ID: %s, MarkerID: %s\n", sfafID, sfaf.MarkerID)
+		if sfaf.MarkerID == markerUUID { // ✅ Now comparing UUID to UUID
+			fmt.Printf("✅ MATCH FOUND!\n")
+			return sfaf, nil
+		}
+	}
+
+	fmt.Printf("❌ No match found for MarkerID: %s\n", markerID)
+	return nil, fmt.Errorf("SFAF not found for marker")
+}
+
+// Backup functionality for later SQLite migration
+func (js *JSONStorage) ExportBackup(backupPath string) error {
+	js.mutex.RLock()
+	defer js.mutex.RUnlock()
+
+	// Convert UUID maps to string maps for JSON serialization
+	stringMarkers := make(map[string]*models.Marker)
+	for id, marker := range js.markers {
+		stringMarkers[id.String()] = marker // ✅ UUID to string conversion
+	}
+
+	stringSFAFs := make(map[string]*models.SFAF)
+	for id, sfaf := range js.sfafs {
+		stringSFAFs[id.String()] = sfaf // ✅ UUID to string conversion
+	}
+
+	jsonData := JSONData{
+		Markers: stringMarkers, // ✅ Compatible types
+		SFAFs:   stringSFAFs,   // ✅ Compatible types
+		Version: "1.0",
+	}
+
+	data, err := json.MarshalIndent(jsonData, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(backupPath, data, 0644)
+}
+
+func (js *JSONStorage) DeleteSFAF(id string) error {
+	sfafID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid SFAF ID: %v", err)
+	}
+
+	js.mutex.Lock()
+	defer js.mutex.Unlock()
+	delete(js.sfafs, sfafID)
+	return js.saveToFile()
+}
+
+// geometry operations for JSONStorage
+func (js *JSONStorage) SaveGeometry(geometry *models.Geometry) error {
+	js.mutex.Lock()
+	defer js.mutex.Unlock()
+	js.geometries[geometry.ID] = geometry
+	return js.saveToFile()
+}
+
+func (js *JSONStorage) GetGeometry(id string) (*models.Geometry, error) {
+	geometryID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid geometry ID format: %v", err)
+	}
+
+	js.mutex.RLock()
+	defer js.mutex.RUnlock()
+
+	if geometry, exists := js.geometries[geometryID]; exists {
+		return geometry, nil
+	}
+	return nil, fmt.Errorf("geometry not found")
+}
+
+func (js *JSONStorage) GetAllGeometries() ([]*models.Geometry, error) {
+	js.mutex.RLock()
+	defer js.mutex.RUnlock()
+
+	geometries := make([]*models.Geometry, 0, len(js.geometries))
+	for _, geometry := range js.geometries {
+		geometries = append(geometries, geometry)
+	}
+	return geometries, nil
+}
+
+func (js *JSONStorage) DeleteGeometry(id string) error { // THE MISSING METHOD
+	geometryID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid geometry ID format: %v", err)
+	}
+
+	js.mutex.Lock()
+	defer js.mutex.Unlock()
+	delete(js.geometries, geometryID)
+	return js.saveToFile()
+}
+package storage
+
+import (
+	"fmt"
+	"sync"
+
+	"sfaf-plotter/models"
+
+	"github.com/google/uuid"
+)
+
+// Keep your existing MemoryStorage implementation and add the new methods
+type MemoryStorage struct {
+	mutex      sync.RWMutex
+	markers    map[uuid.UUID]*models.Marker   // ✅ Consistent with Marker.ID
+	geometries map[uuid.UUID]*models.Geometry // ✅ Consistent with Geometry.ID
+	sfafs      map[uuid.UUID]*models.SFAF     // ✅ Consistent with SFAF.ID
+	iracNotes  map[string]*models.IRACNote    // String keys for code-based lookup
+}
+
+func NewMemoryStorage() *MemoryStorage {
+	return &MemoryStorage{
+		markers: make(map[uuid.UUID]*models.Marker), // ✅ UUID keys
+		sfafs:   make(map[uuid.UUID]*models.SFAF),   // ✅ UUID keys
+	}
+}
+
+// ... (keep existing marker methods) ...
+
+// Add SFAF methods to MemoryStorage
+func (ms *MemoryStorage) SaveSFAF(sfaf *models.SFAF) error {
+	ms.mutex.Lock()
+	defer ms.mutex.Unlock()
+
+	ms.sfafs[sfaf.ID] = sfaf
+	return nil
+}
+
+func (ms *MemoryStorage) GetSFAF(id string) (*models.SFAF, error) {
+	sfafID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SFAF ID format: %v", err)
+	}
+
+	ms.mutex.RLock()
+	defer ms.mutex.RUnlock()
+
+	if sfaf, exists := ms.sfafs[sfafID]; exists {
+		return sfaf, nil
+	}
+	return nil, fmt.Errorf("SFAF not found")
+}
+
+func (ms *MemoryStorage) GetSFAFByMarkerID(markerID string) (*models.SFAF, error) {
+	// Convert string input to UUID for comparison
+	markerUUID, err := uuid.Parse(markerID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid marker ID format: %v", err)
+	}
+
+	ms.mutex.RLock()
+	defer ms.mutex.RUnlock()
+
+	for _, sfaf := range ms.sfafs {
+		if sfaf.MarkerID == markerUUID { // ✅ Now comparing UUID to UUID
+			return sfaf, nil
+		}
+	}
+	return nil, fmt.Errorf("SFAF not found for marker")
+}
+
+func (ms *MemoryStorage) SaveGeometry(geometry interface{}) error {
+	// Placeholder
+	return nil
+}
+package storage
+
+import "sfaf-plotter/models"
+
+type Storage interface {
+	// Marker operations (if not already defined)
+	SaveMarker(marker *models.Marker) error
+	GetMarker(id string) (*models.Marker, error)
+	GetAllMarkers() ([]*models.Marker, error)
+	UpdateMarker(id string, marker *models.Marker) error
+	DeleteMarker(id string) error
+
+	// SFAF operations (MISSING - ADD THESE)
+	SaveSFAF(sfaf *models.SFAF) error
+	GetSFAF(id string) (*models.SFAF, error)
+	GetSFAFByMarkerID(markerID string) (*models.SFAF, error)
+	DeleteSFAF(id string) error
+
+	// Geometry operations (for GeometryService)
+	SaveGeometry(geometry *models.Geometry) error
+	GetGeometry(id string) (*models.Geometry, error)
+	GetAllGeometries() ([]*models.Geometry, error)
+	DeleteGeometry(id string) error
+
+	// Export functionality
+	ExportBackup(backupPath string) error
+}

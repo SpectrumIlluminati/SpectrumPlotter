@@ -1,0 +1,169 @@
+/* css/leaflet-draw-dark.css - Fixed version with icons */
+
+/* Main draw toolbar */
+.leaflet-draw-toolbar {
+    background: rgba(26, 26, 26, 0.9) !important;
+    border: 1px solid #333 !important;
+    border-radius: 6px !important;
+    backdrop-filter: blur(10px);
+}
+
+/* Individual draw buttons - PRESERVE BACKGROUND IMAGES */
+.leaflet-draw-toolbar a {
+    background-color: rgba(42, 42, 42, 0.9) !important;
+    border: 1px solid #555 !important;
+    transition: all 0.2s ease;
+    /* Don't override background-image, only background-color */
+}
+
+.leaflet-draw-toolbar a:hover {
+    background-color: rgba(76, 175, 80, 0.8) !important;
+    border-color: #4CAF50 !important;
+}
+
+.leaflet-draw-toolbar a.leaflet-draw-toolbar-button-enabled {
+    background-color: rgba(76, 175, 80, 0.9) !important;
+    border-color: #4CAF50 !important;
+}
+
+/* Edit toolbar - PRESERVE BACKGROUND IMAGES */
+.leaflet-edit-toolbar {
+    background: rgba(26, 26, 26, 0.9) !important;
+    border: 1px solid #333 !important;
+    border-radius: 6px !important;
+}
+
+.leaflet-edit-toolbar a {
+    background-color: rgba(42, 42, 42, 0.9) !important;
+    border: 1px solid #555 !important;
+    /* Don't override background-image */
+}
+
+.leaflet-edit-toolbar a:hover {
+    background-color: rgba(76, 175, 80, 0.8) !important;
+}
+
+/* Draw actions toolbar */
+.leaflet-draw-actions {
+    background: rgba(26, 26, 26, 0.95) !important;
+    border: 1px solid #333 !important;
+    border-radius: 6px !important;
+    backdrop-filter: blur(15px);
+}
+
+.leaflet-draw-actions a {
+    background: rgba(42, 42, 42, 0.9) !important;
+    border: 1px solid #555 !important;
+    color: white !important;
+}
+
+.leaflet-draw-actions a:hover {
+    background: rgba(76, 175, 80, 0.8) !important;
+}
+
+/* Light theme overrides - PRESERVE ICONS */
+[data-theme="light"] .leaflet-draw-toolbar {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: #ddd !important;
+}
+
+[data-theme="light"] .leaflet-draw-toolbar a {
+    background-color: rgba(245, 245, 245, 0.9) !important;
+    border-color: #ccc !important;
+}
+
+[data-theme="light"] .leaflet-draw-toolbar a:hover {
+    background-color: rgba(76, 175, 80, 0.8) !important;
+}
+
+[data-theme="light"] .leaflet-edit-toolbar {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: #ddd !important;
+}
+
+[data-theme="light"] .leaflet-edit-toolbar a {
+    background-color: rgba(245, 245, 245, 0.9) !important;
+    border-color: #ccc !important;
+}
+
+[data-theme="light"] .leaflet-draw-actions a {
+    background: rgba(245, 245, 245, 0.9) !important;
+    border-color: #ccc !important;
+    color: #333 !important;
+}
+
+/* Drawing tooltips */
+.leaflet-draw-tooltip {
+    background: rgba(26, 26, 26, 0.95) !important;
+    color: white !important;
+    border: 1px solid #333 !important;
+    border-radius: 6px !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.leaflet-draw-tooltip:before {
+    border-top-color: #333 !important;
+}
+
+.leaflet-draw-tooltip-single {
+    background: rgba(26, 26, 26, 0.95) !important;
+    color: white !important;
+}
+
+.leaflet-draw-tooltip-subtext {
+    color: #ccc !important;
+}
+
+/* Light theme tooltips */
+[data-theme="light"] .leaflet-draw-tooltip {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #333 !important;
+    border-color: #ddd !important;
+}
+
+[data-theme="light"] .leaflet-draw-tooltip:before {
+    border-top-color: #ddd !important;
+}
+
+[data-theme="light"] .leaflet-draw-tooltip-subtext {
+    color: #666 !important;
+}
+
+/* Drawing guides and temporary lines */
+.leaflet-draw-guide-dash {
+    stroke: #4CAF50 !important;
+    stroke-opacity: 0.6 !important;
+}
+
+.leaflet-editing-icon {
+    border: 2px solid #4CAF50 !important;
+    background: rgba(76, 175, 80, 0.8) !important;
+}
+
+/* Modern styling */
+.leaflet-draw-toolbar,
+.leaflet-edit-toolbar {
+    border-radius: 8px !important;
+    overflow: hidden;
+}
+
+.leaflet-draw-toolbar a:first-child,
+.leaflet-edit-toolbar a:first-child {
+    border-radius: 8px 0 0 8px !important;
+}
+
+.leaflet-draw-toolbar a:last-child,
+.leaflet-edit-toolbar a:last-child {
+    border-radius: 0 8px 8px 0 !important;
+}
+
+.leaflet-draw-toolbar a:only-child,
+.leaflet-edit-toolbar a:only-child {
+    border-radius: 8px !important;
+}
+
+/* Custom positioning */
+.leaflet-top.leaflet-left {
+    top: 60px !important;
+}

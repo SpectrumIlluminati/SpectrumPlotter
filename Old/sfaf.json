@@ -1,0 +1,400 @@
+[
+  {
+    "classification": "UE",
+    "sfaf": {
+      "102": {
+        "entry": "AF  014589"
+      },
+      "103": {
+        "entry": "J1305906",
+        "occur": {
+          "02": {
+            "entry": "I9917254"
+          },
+          "03": {
+            "entry": "J0804396"
+          },
+          "04": {
+            "entry": "J0352447"
+          }
+        }
+      },
+      "107": {
+        "entry": "20011005"
+      },
+      "110": {
+        "entry": "K4028(4026.5)"
+      },
+      "113": {
+        "entry": "MO",
+        "occur": {
+          "02": {
+            "entry": "MO"
+          }
+        }
+      },
+      "114": {
+        "entry": "2K70J3E",
+        "occur": {
+          "02": {
+            "entry": "3K00J3E"
+          }
+        }
+      },
+      "115": {
+        "entry": "W500",
+        "occur": {
+          "02": {
+            "entry": "W20"
+          }
+        }
+      },
+      "130": {
+        "entry": "3HX"
+      },
+      "142": {
+        "entry": "20220320"
+      },
+      "143": {
+        "entry": "20170320"
+      },
+      "144": {
+        "entry": "Y"
+      },
+      "200": {
+        "entry": "USAF"
+      },
+      "201": {
+        "entry": "SOCOM"
+      },
+      "202": {
+        "entry": "AFSOC"
+      },
+      "204": {
+        "entry": "AFSOC"
+      },
+      "205": {
+        "entry": "$"
+      },
+      "206": {
+        "entry": "HURLBURT"
+      },
+      "207": {
+        "entry": "1SOWEX"
+      },
+      "208": {
+        "entry": "$"
+      },
+      "209": {
+        "entry": "GAFC"
+      },
+      "300": {
+        "entry": "FL"
+      },
+      "301": {
+        "entry": "HURLBURT"
+      },
+      "303": {
+        "entry": "302521N0864150W"
+      },
+      "306": {
+        "entry": "5B"
+      },
+      "340": {
+        "entry": "G,AN/PRC-160(V)",
+        "occur": {
+          "02": {
+            "entry": "G,AN/PRC-150(C)"
+          }
+        }
+      },
+      "341": {
+        "entry": "10,N"
+      },
+      "343": {
+        "entry": "J/F 12/11171",
+        "occur": {
+          "02": {
+            "entry": "J/F 12/07985"
+          }
+        }
+      },
+      "357": {
+        "entry": "0"
+      },
+      "362": {
+        "entry": "ND"
+      },
+      "363": {
+        "entry": "V"
+      },
+      "373": {
+        "entry": "C"
+      },
+      "400": {
+        "entry": "FL"
+      },
+      "401": {
+        "entry": "HURLBURT"
+      },
+      "402": {
+        "entry": "I,DOD-S"
+      },
+      "403": {
+        "entry": "302521N0864150W"
+      },
+      "440": {
+        "entry": "G,AN/PRC-160(V)",
+        "occur": {
+          "02": {
+            "entry": "G,AN/PRC-150(C)"
+          }
+        }
+      },
+      "443": {
+        "entry": "J/F 12/11171",
+        "occur": {
+          "02": {
+            "entry": "J/F 12/07985"
+          }
+        }
+      },
+      "457": {
+        "entry": "0"
+      },
+      "462": {
+        "entry": "ND"
+      },
+      "463": {
+        "entry": "V"
+      },
+      "473": {
+        "entry": "C"
+      },
+      "500": {
+        "entry": "S189",
+        "occur": {
+          "02": {
+            "entry": "E029"
+          },
+          "03": {
+            "entry": "C010"
+          },
+          "04": {
+            "entry": "S144"
+          }
+        }
+      },
+      "501": {
+        "entry": "M015,IRAC 43521/1,SPS 22853/1",
+        "occur": {
+          "02": {
+            "entry": "M015,IRAC 32935/10,SPS 13653/10"
+          },
+          "03": {
+            "entry": "M018,YYMMDD,INIT,GAFC"
+          }
+        }
+      },
+      "502": {
+        "entry": [
+          "$",
+          "FREQUENCY IS IN SUPPORT OF MULTIPLE MOBILE CONFIGURATIONS ON",
+          "HURLBURT FIELD FOR EQUIPMENT CHECKOUT, MAINTENANCE, TESTING AND",
+          "SOF TRAINING OPERATIONS.  FREQUENCY USE SCHEDULED WITH BASE ISM."
+        ]
+      },
+      "503": {
+        "entry": "CARRIER(WINDOW) FREQ 4026.5KHZ"
+      },
+      "504": {
+        "entry": "5YR REVIEW UPDATED TO REFLECT CHANGE OF DEVICES AND SPECIFY PURPOSE"
+      },
+      "511": {
+        "entry": "SUSTAINING OPERATIONS"
+      },
+      "512": {
+        "entry": "TRAINING"
+      },
+      "520": {
+        "entry": [
+          "$",
+          "FREQUENCY IS IN SUPPORT OF SOF TRAINING OPERATIONS ON HURLBURT FIELD.",
+          "FREQUENCY WILL BETTER PREPARE SOF UNITS FOR REAL WORLD DEPLOYMENT.",
+          "MAY BE REPURPOSED FOR EXERCISE, VISITING AFSOC UNIT OPS, AND OPERATIONS",
+          "DURING REAL WORLD EMERGENCIES WHEN TRAINING UNITS HAVE EVACUATED.",
+          "STOP BUZZER HURLBURT ISM, 850-884-9444"
+        ]
+      },
+      "701": {
+        "entry": "T01"
+      },
+      "716": {
+        "entry": "1"
+      },
+      "801": {
+        "entry": "JASON CHILES,8508849444,191030"
+      },
+      "803": {
+        "entry": "MICHAEL ESAREY,8508840340,191206"
+      },
+      "911": {
+        "entry": "20170321"
+      },
+      "924": {
+        "entry": "FRRS"
+      },
+      "927": {
+        "entry": "20011009"
+      },
+      "928": {
+        "entry": "20170228"
+      },
+      "956": {
+        "entry": "JTD"
+      },
+      "005": {
+        "entry": "UE"
+      },
+      "010": {
+        "entry": "M"
+      }
+    },
+    "serial": "AF  014589",
+    "docket": {
+      "current": "J1305906",
+      "original": "I9917254",
+      "previous": [
+        "J0804396",
+        "J0352447"
+      ]
+    },
+    "authorization": {
+      "text": "20011005",
+      "yyyy": 2001,
+      "mm": 10,
+      "dd": 5,
+      "date": "2001-10-05T05:00:00.000Z"
+    },
+    "transmitter": {
+      "freqband": {
+        "frequency": 4.0280000000000005,
+        "rejected": 4.0265
+      },
+      "01": {
+        "stationclass": "MO",
+        "emissiondesignator": {
+          "entry": "2K70J3E",
+          "frequency": 0.002,
+          "modulation": {
+            "type": {
+              "type": "amplitude",
+              "desc": "Single sideband, suppressed carrier"
+            },
+            "nature": {
+              "card": "single",
+              "encoding": "analogue",
+              "desc": "A single channel containing analogue information"
+            },
+            "information": {
+              "type": "aural",
+              "desc": "Telephony (including sound broadcasting)"
+            }
+          }
+        }
+      },
+      "02": {
+        "stationclass": "MO",
+        "emissiondesignator": {
+          "entry": "3K00J3E",
+          "frequency": 0.003,
+          "modulation": {
+            "type": {
+              "type": "amplitude",
+              "desc": "Single sideband, suppressed carrier"
+            },
+            "nature": {
+              "card": "single",
+              "encoding": "analogue",
+              "desc": "A single channel containing analogue information"
+            },
+            "information": {
+              "type": "aural",
+              "desc": "Telephony (including sound broadcasting)"
+            }
+          }
+        }
+      },
+      "location": {
+        "lat": {
+          "deg": 30,
+          "min": 25,
+          "sec": 21,
+          "dir": "N",
+          "dec": 30.4225
+        },
+        "lon": {
+          "deg": 86,
+          "min": 41,
+          "sec": 50,
+          "dir": "W",
+          "dec": -86.69722222222222
+        },
+        "coord": [
+          30.4225,
+          -86.69722222222222
+        ],
+        "radius": 5
+      }
+    },
+    "txantennas": {
+      "01": {
+        "gain": "0",
+        "orientation": "ND",
+        "polarization": {
+          "type": "fixed vertical"
+        }
+      }
+    },
+    "receivers": {
+      "01": {
+        "stateloc": "FL",
+        "antennaloc": "HURLBURT",
+        "control": "I,DOD-S",
+        "location": {
+          "lat": {
+            "deg": 30,
+            "min": 25,
+            "sec": 21,
+            "dir": "N",
+            "dec": 30.4225
+          },
+          "lon": {
+            "deg": 86,
+            "min": 41,
+            "sec": 50,
+            "dir": "W",
+            "dec": -86.69722222222222
+          },
+          "coord": [
+            30.4225,
+            -86.69722222222222
+          ]
+        },
+        "equipmentcertid": "J/F 12/11171"
+      },
+      "02": {
+        "equipmentcertid": "J/F 12/07985"
+      }
+    },
+    "rxantennas": {
+      "01": {
+        "orientation": "ND",
+        "polarization": {
+          "type": "fixed vertical"
+        }
+      }
+    },
+    "_id": "AF  014589"
+  }
+]

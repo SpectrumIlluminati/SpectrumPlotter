@@ -1,0 +1,953 @@
+// buttonfunctions.js
+function addEmissionCharacteristicsEntry() {
+    const container = document.getElementById('emission-characteristics-entries') ||
+        document.querySelector('[data-section="emission-chars"] .section-content');
+
+    if (!container) {
+        showNotification('Emission characteristics container not found', 'error');
+        return;
+    }
+
+    const entryCount = container.querySelectorAll('.emission-entry').length + 1;
+
+    // MCEB Pub 7 limit: 20 occurrences maximum for emission characteristics
+    if (entryCount > 20) {
+        showNotification('Maximum 20 emission characteristic occurrences allowed per MCEB Pub 7', 'error');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry emission-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">Emission Characteristics #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field113_${entryCount}">113 - Station Class:</label>
+            <select id="field113_${entryCount}" class="form-control" data-field="113">
+                <option value="">Select Station Class...</option>
+                <option value="FB">FB - Fixed Base</option>
+                <option value="FB2">FB2 - Fixed Base (Secondary)</option>
+                <option value="ML">ML - Mobile Land</option>
+                <option value="MA">MA - Mobile Aircraft</option>
+                <option value="MO">MO - Mobile Other</option>
+                <option value="BC">BC - Broadcasting</option>
+                <option value="AC">AC - Aeronautical</option>
+                <option value="AF">AF - Aeronautical Fixed</option>
+                <option value="CG">CG - Coast Guard</option>
+                <option value="HA">HA - Amateur</option>
+                <option value="XE">XE - Experimental</option>
+            </select>
+            <small class="field-help">MCEB Pub 7 Annex A station classifications</small>
+        </div>
+        <div class="form-row">
+            <label for="field114_${entryCount}">114 - Emission Designator:</label>
+            <input type="text" id="field114_${entryCount}" class="form-control" 
+                   maxlength="11" placeholder="3K00J3E, 16K0F3E, 2K70J3E" data-field="114">
+            <small class="field-help">Format: bandwidth + emission class (max 11 chars per MCEB Pub 7)</small>
+        </div>
+        <div class="form-row">
+            <label for="field115_${entryCount}">115 - Transmitter Power:</label>
+            <input type="text" id="field115_${entryCount}" class="form-control" 
+                   maxlength="9" placeholder="K10, W50, M5" data-field="115">
+            <small class="field-help">Format: power value + unit (K=kW, W=watts, M=MW, max 9 chars)</small>
+        </div>
+        <div class="form-row">
+            <label for="field116_${entryCount}">116 - Power Type:</label>
+            <select id="field116_${entryCount}" class="form-control" data-field="116">
+                <option value="">Select Power Type...</option>
+                <option value="C">C - Carrier Power (N0N, A3E broadcasting)</option>
+                <option value="M">M - Mean Power (A/A, A/G/A, FM emissions)</option>
+                <option value="P">P - Peak Envelope Power (pulsed equipment)</option>
+            </select>
+            <small class="field-help">Official MCEB Pub 7 power type classifications</small>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    addValidationListeners(newEntry);
+
+    console.log(`✅ Added emission characteristics entry #${entryCount} (MCEB Pub 7 compliant)`);
+    showNotification(`Emission characteristics #${entryCount} added`, 'success');
+}
+
+// Receiver Equipment entries
+function addReceiverEntryManual() {
+    const container = document.getElementById('receiver-entries') ||
+        document.querySelector('[data-section="rx-equipment"] .section-content #receiver-entries');
+
+    if (!container) {
+        showNotification('Receiver container not found', 'error');
+        return;
+    }
+
+    const entryCount = container.querySelectorAll('.receiver-entry').length + 1;
+
+    if (entryCount > 10) {
+        showNotification('Maximum 10 receiver occurrences allowed per MCEB Pub 7 field 440', 'error');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry receiver-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">Receiver #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field440_${entryCount}">440 - Equipment Nomenclature:</label>
+            <input type="text" id="field440_${entryCount}" class="form-control" 
+                   maxlength="18" placeholder="G,AN/PRC-160(V)" data-field="440">
+            <small class="field-help">Format: Equipment type + nomenclature (max 18 chars)</small>
+        </div>
+        <div class="form-row">
+            <label for="field443_${entryCount}">443 - Equipment Certification ID:</label>
+            <input type="text" id="field443_${entryCount}" class="form-control" 
+                   maxlength="15" placeholder="J/F 12/11171" data-field="443">
+            <small class="field-help">Military equipment certification number (max 15 chars)</small>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    addValidationListeners(newEntry);
+
+    console.log(`✅ Added receiver entry #${entryCount} (MCEB Pub 7 compliant)`);
+    showNotification(`Receiver #${entryCount} added`, 'success');
+}
+
+// IRAC Notes (max 10 per MCEB Pub 7)
+function addIracNotesEntryManual() {
+    console.log('🔄 Adding IRAC notes entry...');
+
+    const container = document.getElementById('irac-notes-entries') ||
+        document.querySelector('[data-section="supplementary"] .section-content #irac-notes-entries');
+
+    if (!container) {
+        showNotification('IRAC notes container not found', 'error');
+        return;
+    }
+
+    const entryCount = container.querySelectorAll('.notes-entry').length + 1;
+
+    if (entryCount > 10) {
+        showNotification('Maximum 10 IRAC note occurrences allowed', 'error');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry notes-entry';
+    newEntry.dataset.entry = entryCount;
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">IRAC Note #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field500_${entryCount}">500 - IRAC Notes:</label>
+            <input type="text" id="field500_${entryCount}" class="form-control" 
+                   maxlength="4" placeholder="C010, S189, E029" data-field="500">
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    addValidationListeners(newEntry);
+
+    console.log(`✅ Added IRAC notes entry #${entryCount}`);
+    showNotification(`IRAC note #${entryCount} added`, 'success');
+}
+
+// Equipment entries (max 10 per MCEB Pub 7)
+function addEquipmentEntryManual() {
+    const container = document.getElementById('equipment-entries');
+    const entryCount = container.querySelectorAll('.equipment-entry').length + 1;
+
+    if (entryCount > 10) {
+        showNotification('Maximum 10 equipment occurrences allowed per MCEB Pub 7 field 340', 'error');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry equipment-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">Equipment #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field340_${entryCount}">340 - Equipment Nomenclature:</label>
+            <input type="text" id="field340_${entryCount}" class="form-control" 
+                   maxlength="18" placeholder="G,AN/PRC-160(V)" data-field="340">
+            <small class="field-help">Format: Equipment type + nomenclature (max 18 chars)</small>
+        </div>
+        <div class="form-row">
+            <label for="field343_${entryCount}">343 - Equipment Certification ID:</label>
+            <input type="text" id="field343_${entryCount}" class="form-control" 
+                   maxlength="15" placeholder="J/F 12/11171" data-field="343">
+            <small class="field-help">Military equipment certification number (max 15 chars)</small>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    addValidationListeners(newEntry);
+
+    console.log(`✅ Added equipment entry #${entryCount} (MCEB Pub 7 compliant)`);
+    showNotification(`Equipment #${entryCount} added`, 'success');
+}
+
+function addReceiverEntryManual() {
+    const container = document.getElementById('receiver-entries');
+    const entryCount = container.querySelectorAll('.receiver-entry').length + 1;
+
+    // Check maximum occurrences (10 per MCEB Pub 7)
+    if (entryCount > 10) {
+        alert('Maximum 10 receiver occurrences allowed per MCEB Pub 7 field 440');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry receiver-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">Receiver #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field440_${entryCount}">440 - Equipment Nomenclature:</label>
+            <input type="text" id="field440_${entryCount}" class="form-control" 
+                   maxlength="18" placeholder="G,AN/PRC-160(V)" data-field="440">
+        </div>
+        <div class="form-row">
+            <label for="field443_${entryCount}">443 - Equipment Certification ID:</label>
+            <input type="text" id="field443_${entryCount}" class="form-control" 
+                   maxlength="15" placeholder="J/F 12/11171" data-field="443">
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    console.log(`✅ Added receiver entry #${entryCount} (MCEB Pub 7 compliant)`)
+};
+
+// Add field occurrence
+// DEBUGGING VERSION - Add this to see what's happening:
+// Add field occurrence
+addFieldOccurrence(baseFieldId, spec) {
+    try {
+        console.log(`🔄 Adding field occurrence for ${baseFieldId}`);
+
+        const currentCount = this.getFieldOccurrenceCount(baseFieldId);
+        console.log(`Current count: ${currentCount}, Max: ${spec.maxOccurrences}`);
+
+        if (currentCount >= spec.maxOccurrences) {
+            console.warn(`Maximum ${spec.maxOccurrences} occurrences reached for ${spec.title}`);
+            alert(`Maximum ${spec.maxOccurrences} occurrences allowed for ${spec.title}`);
+            return false;
+        }
+
+        const newFieldId = `${baseFieldId}_${currentCount + 1}`;
+        console.log(`Creating new field: ${newFieldId}`);
+
+        // Find the first field or container
+        const firstField = document.getElementById(`${baseFieldId}_1`) ||
+            document.getElementById(baseFieldId);
+
+        if (!firstField) {
+            console.error(`❌ Base field not found: ${baseFieldId}_1 or ${baseFieldId}`);
+            alert(`Base field not found for ${spec.title}`);
+            return false;
+        }
+
+        // Create new field
+        const newFieldContainer = this.createFieldOccurrence(newFieldId, spec, currentCount + 1);
+
+        if (!newFieldContainer) {
+            console.error(`❌ Failed to create field container for ${newFieldId}`);
+            return false;
+        }
+
+        // Find parent container with better fallbacks
+        const parentContainer = this.findParentContainer(firstField);
+
+        if (!parentContainer) {
+            console.error(`❌ No suitable parent container found for ${baseFieldId}`);
+            return false;
+        }
+
+        // Add to DOM
+        parentContainer.appendChild(newFieldContainer);
+
+        // Update counters
+        this.updateOccurrenceCounters(baseFieldId, spec);
+
+        console.log(`✅ Successfully added ${newFieldId}`);
+        return true;
+
+    } catch (error) {
+        console.error(`❌ Error adding field occurrence for ${baseFieldId}:`, error);
+        alert(`Error adding ${spec.title}: ${error.message}`);
+        return false;
+    }
+}
+
+// Helper method for finding parent container
+findParentContainer(element) {
+    // Try multiple selectors in order of preference
+    const selectors = [
+        '.section-content',
+        '.form-group',
+        '.field-container',
+        '.dynamic-fields',
+        '[id$="-entries"]',
+        'div'
+    ];
+
+    for (const selector of selectors) {
+        const container = element.closest(selector);
+        if (container) {
+            console.log(`Found parent container: ${selector}`);
+            return container;
+        }
+    }
+
+    // Last resort
+    console.warn('Using parentElement as fallback');
+    return element.parentElement || document.body;
+}
+
+function addEmissionCharacteristicsEntry() {
+    const container = document.getElementById('emission-characteristics-entries');
+    const entryCount = container.querySelectorAll('.emission-entry').length + 1;
+
+    // Check maximum occurrences per MCEB Pub 7
+    if (entryCount > 20) {
+        showNotification('Maximum 20 emission characteristic occurrences allowed per MCEB Pub 7', 'error');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry emission-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">Emission Characteristics #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field113_${entryCount}">113 - Station Class:</label>
+            <select id="field113_${entryCount}" class="form-control" data-field="113">
+                <option value="">Select...</option>
+                <option value="FB">FB - Fixed Base</option>
+                <option value="ML">ML - Mobile Land</option>
+                <option value="MA">MA - Mobile Aircraft</option>
+                <option value="BC">BC - Broadcasting</option>
+                <option value="FA">FA - Aeronautical</option>
+                <option value="FC">FC - Maritime Mobile Coast</option>
+                <option value="MS">MS - Maritime Mobile Ship</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="field114_${entryCount}">114 - Emission Designator:</label>
+            <input type="text" id="field114_${entryCount}" class="form-control" 
+                   maxlength="11" placeholder="3K00J3E, 16K0F3E" data-field="114">
+            <small class="field-help">Format: bandwidth + emission class (max 11 chars)</small>
+        </div>
+        <div class="form-row">
+            <label for="field115_${entryCount}">115 - Transmitter Power:</label>
+            <input type="text" id="field115_${entryCount}" class="form-control" 
+                   maxlength="9" placeholder="K10, W50, M5" data-field="115">
+            <small class="field-help">Format: power value + unit (K=kW, W=watts, M=MW)</small>
+        </div>
+        <div class="form-row">
+            <label for="field116_${entryCount}">116 - Power Type:</label>
+            <select id="field116_${entryCount}" class="form-control" data-field="116">
+                <option value="">Select...</option>
+                <option value="C">C - Carrier Power (N0N, A3E broadcasting)</option>
+                <option value="M">M - Mean Power (A/A, A/G/A, FM emissions)</option>
+                <option value="P">P - Peak Envelope Power (pulsed equipment)</option>
+            </select>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+
+    // Add validation listeners
+    addValidationListeners(newEntry);
+
+    console.log(`✅ Added emission characteristics entry #${entryCount} (MCEB Pub 7 compliant)`);
+    showNotification(`Emission characteristics #${entryCount} added`, 'success');
+}
+
+function addIracNotesEntryManual() {
+    const container = document.getElementById('irac-notes-entries');
+    const entryCount = container.querySelectorAll('.notes-entry').length + 1;
+
+    // Check maximum occurrences (10 per MCEB Pub 7)
+    if (entryCount > 10) {
+        alert('Maximum 10 IRAC note occurrences allowed per MCEB Pub 7 field 500');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry notes-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">IRAC Note #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field500_${entryCount}">500 - IRAC Notes:</label>
+            <input type="text" id="field500_${entryCount}" class="form-control" 
+                   maxlength="4" placeholder="C010, S189, E029" data-field="500">
+            <small class="field-help">Official IRAC coordination note codes</small>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    console.log(`✅ Added IRAC note entry #${entryCount} (MCEB Pub 7 compliant)`);
+}
+
+function addCommentsEntryManual() {
+    const container = document.getElementById('comments-entries');
+    const entryCount = container.querySelectorAll('.comment-entry').length + 1;
+
+    // Check maximum occurrences (30 per MCEB Pub 7)
+    if (entryCount > 30) {
+        alert('Maximum 30 comment occurrences allowed per MCEB Pub 7 field 501');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry comment-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">Comment #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field501_${entryCount}">501 - Notes/Comments:</label>
+            <input type="text" id="field501_${entryCount}" class="form-control" 
+                   maxlength="35" placeholder="M015,IRAC 43521/1,SPS 22853/1" data-field="501">
+            <small class="field-help">Coordination comments and reference numbers</small>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+    console.log(`✅ Added comment entry #${entryCount} (MCEB Pub 7 compliant)`);
+}
+
+// IRAC Notes (max 10 per MCEB Pub 7)
+function addIracNotesEntryManual() {
+    const container = document.getElementById('irac-notes-entries');
+    const entryCount = container.querySelectorAll('.notes-entry').length + 1;
+
+    if (entryCount > 10) {
+        showNotification('Maximum 10 IRAC note occurrences allowed per MCEB Pub 7 field 500', 'error');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry notes-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">IRAC Note #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field500_${entryCount}">500 - IRAC Notes:</label>
+            <select id="field500_${entryCount}" class="form-control" data-field="500">
+                <option value="">Select IRAC Note...</option>
+                <option value="C010">C010 - Gulf Area Frequency Coordinator</option>
+                <option value="C019">C019 - Army Frequency Management Office</option>
+                <option value="E029">E029 - Upper sideband transmission</option>
+                <option value="L012">L012 - Emergency use only</option>
+                <option value="S063">S063 - Search and rescue communications</option>
+                <option value="S142">S142 - Drone Control</option>
+                <option value="S148">S148 - National emergency communications</option>
+            </select>
+            <small class="field-help">Official IRAC coordination note codes (MCEB Pub 7 Annex E)</small>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+
+    console.log(`✅ Added IRAC note entry #${entryCount} (MCEB Pub 7 compliant)`);
+    showNotification(`IRAC note #${entryCount} added`, 'success');
+}
+// Wait for SFAF manager initialization
+// sidebar-functions.js - MCEB Pub 7 Compliant Field Management
+// Based on official MCEB Publication 7 (1 November 2018)
+
+// CORRECTED: Single frequency per SFAF record (MCEB Pub 7 standard)
+
+
+
+// Comments (max 30 per MCEB Pub 7)
+function addCommentsEntryManual() {
+    const container = document.getElementById('comments-entries');
+    const entryCount = container.querySelectorAll('.comment-entry').length + 1;
+
+    if (entryCount > 30) {
+        showNotification('Maximum 30 comment occurrences allowed per MCEB Pub 7 field 501', 'error');
+        return;
+    }
+
+    const newEntry = document.createElement('div');
+    newEntry.className = 'dynamic-entry comment-entry';
+    newEntry.dataset.entry = entryCount;
+
+    newEntry.innerHTML = `
+        <div class="entry-header">
+            <span class="entry-title">Comment #${entryCount}</span>
+            <button class="remove-entry-btn" onclick="this.parentElement.parentElement.remove()">✕</button>
+        </div>
+        <div class="form-row">
+            <label for="field501_${entryCount}">501 - Notes/Comments:</label>
+            <input type="text" id="field501_${entryCount}" class="form-control" 
+                   maxlength="35" placeholder="M015,IRAC 43521/1,SPS 22853/1" data-field="501">
+            <small class="field-help">Coordination comments and reference numbers (max 35 chars)</small>
+        </div>
+    `;
+
+    container.appendChild(newEntry);
+
+    console.log(`✅ Added comment entry #${entryCount} (MCEB Pub 7 compliant)`);
+    showNotification(`Comment #${entryCount} added`, 'success');
+}
+
+// Validation listeners for new fields
+function addValidationListeners(container) {
+    const inputs = container.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('blur', (e) => {
+            validateField(e.target);
+        });
+
+        if (input.maxLength) {
+            input.addEventListener('input', (e) => {
+                updateCharacterCounter(e.target);
+            });
+        }
+    });
+}
+
+// Character counter for MCEB Pub 7 compliance
+function updateCharacterCounter(field) {
+    const maxLength = field.maxLength;
+    if (!maxLength) return;
+
+    let counter = field.parentNode.querySelector('.char-counter');
+    if (!counter) {
+        counter = document.createElement('div');
+        counter.className = 'char-counter';
+        counter.style.cssText = `
+            font-size: 0.8em;
+            color: #666;
+            text-align: right;
+            margin-top: 2px;
+        `;
+        field.parentNode.appendChild(counter);
+    }
+
+    const remaining = maxLength - field.value.length;
+    counter.textContent = `${field.value.length}/${maxLength}`;
+
+    if (remaining < 5) {
+        counter.style.color = '#dc3545';
+    } else if (remaining < 10) {
+        counter.style.color = '#ffc107';
+    } else {
+        counter.style.color = '#666';
+    }
+}
+
+// Field validation based on MCEB Pub 7
+function validateField(field) {
+    const fieldType = field.dataset.field;
+    let isValid = true;
+
+    // Clear existing errors
+    clearFieldErrors(field);
+
+    switch (fieldType) {
+        case '114': // Emission Designator
+            isValid = validateEmissionDesignator(field);
+            break;
+        case '113': // Station Class
+            isValid = validateStationClass(field);
+            break;
+        case '115': // Transmitter Power
+            isValid = validateTransmitterPower(field);
+            break;
+    }
+
+    return isValid;
+}
+
+// Notification system
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 4px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        max-width: 400px;
+    `;
+
+    switch (type) {
+        case 'success':
+            notification.style.backgroundColor = '#28a745';
+            break;
+        case 'error':
+            notification.style.backgroundColor = '#dc3545';
+            break;
+        case 'warning':
+            notification.style.backgroundColor = '#ffc107';
+            notification.style.color = '#000';
+            break;
+        default:
+            notification.style.backgroundColor = '#007bff';
+    }
+
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
+}
+
+// Clear field errors
+function clearFieldErrors(field) {
+    field.style.borderColor = '';
+    const existingErrors = field.parentNode.querySelectorAll('.field-error');
+    existingErrors.forEach(error => error.remove());
+}
+
+// Button Event Binding - MCEB Pub 7 Compliant Field Management
+// Connects HTML buttons from sidebar.html to existing SFAF Field Manager methods
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for SFAF Manager initialization from manager.js
+    setTimeout(() => {
+        console.log('🔗 Connecting MCEB Pub 7 compliant field creation buttons...');
+
+        // Verify SFAF Field Manager is available
+        if (!window.sfafFieldManager) {
+            console.error('❌ SFAF Field Manager not available for button binding');
+            return;
+        }
+
+        // ===== EMISSION CHARACTERISTICS BUTTONS =====
+
+        // Note: Field 110 (Frequency) has max 1 occurrence per MCEB Pub 7
+        // So we bind to emission characteristics (113-116) which have max 20 occurrences
+
+        const addFreqBtn = document.getElementById('addFrequencyEntry');
+        if (addFreqBtn) {
+            addFreqBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔄 Add Frequency Entry button clicked');
+
+                // Since 110 is single occurrence, add emission characteristics instead
+                try {
+                    sfafFieldManager.addFieldOccurrence('field113', sfafFieldManager.fieldSpecs['field113']);
+                    console.log('✅ Emission characteristics entry added');
+                } catch (error) {
+                    console.error('❌ Error adding emission characteristics:', error);
+                    showNotification('Error adding emission characteristics entry', 'error');
+                }
+            });
+            console.log('✅ Add Frequency Entry button connected');
+        }
+
+        // ===== EQUIPMENT BUTTONS =====
+
+        // Add Equipment Entry Button (Field 340 - max 10 occurrences)
+        const addEquipBtn = document.getElementById('addEquipmentEntry');
+        if (addEquipBtn) {
+            addEquipBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔄 Add Equipment Entry button clicked');
+
+                try {
+                    sfafFieldManager.addFieldOccurrence('field340', sfafFieldManager.fieldSpecs['field340']);
+                    console.log('✅ Equipment entry added');
+                } catch (error) {
+                    console.error('❌ Error adding equipment:', error);
+                    showNotification('Error adding equipment entry', 'error');
+                }
+            });
+            console.log('✅ Add Equipment Entry button connected');
+        }
+
+        // Add Receiver Entry Button (Field 440 - max 10 occurrences)
+        const addReceiverBtn = document.getElementById('addReceiverEntry');
+        if (addReceiverBtn) {
+            addReceiverBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔄 Add Receiver Entry button clicked');
+
+                try {
+                    sfafFieldManager.addFieldOccurrence('field440', sfafFieldManager.fieldSpecs['field440']);
+                    console.log('✅ Receiver entry added');
+                } catch (error) {
+                    console.error('❌ Error adding receiver:', error);
+                    showNotification('Error adding receiver entry', 'error');
+                }
+            });
+            console.log('✅ Add Receiver Entry button connected');
+        }
+
+        // ===== SUPPLEMENTARY DETAILS BUTTONS =====
+
+        // Add IRAC Notes Entry Button (Field 500 - max 10 occurrences)
+        const addIracBtn = document.getElementById('addIracNotesEntry');
+        if (addIracBtn) {
+            addIracBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔄 Add IRAC Notes Entry button clicked');
+
+                try {
+                    sfafFieldManager.addFieldOccurrence('field500', sfafFieldManager.fieldSpecs['field500']);
+                    console.log('✅ IRAC notes entry added');
+                } catch (error) {
+                    console.error('❌ Error adding IRAC notes:', error);
+                    showNotification('Error adding IRAC notes entry', 'error');
+                }
+            });
+            console.log('✅ Add IRAC Notes Entry button connected');
+        }
+
+        // Add Comments Entry Button (Field 501 - max 30 occurrences)
+        const addCommentsBtn = document.getElementById('addCommentsEntry');
+        if (addCommentsBtn) {
+            addCommentsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔄 Add Comments Entry button clicked');
+
+                try {
+                    sfafFieldManager.addFieldOccurrence('field501', sfafFieldManager.fieldSpecs['field501']);
+                    console.log('✅ Comments entry added');
+                } catch (error) {
+                    console.error('❌ Error adding comments:', error);
+                    showNotification('Error adding comments entry', 'error');
+                }
+            });
+            console.log('✅ Add Comments Entry button connected');
+        }
+
+        // ===== ACTION BUTTONS =====
+
+        // Validate SFAF Button
+        const validateBtn = document.getElementById('validateSFAFBtn');
+        if (validateBtn) {
+            validateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔍 Validate SFAF button clicked');
+
+                try {
+                    const isValid = sfafFieldManager.validateAllFields();
+                    if (isValid) {
+                        showNotification('All SFAF fields validated successfully', 'success');
+                    } else {
+                        showNotification('Validation errors found - check field highlighting', 'warning');
+                    }
+                } catch (error) {
+                    console.error('❌ Error during validation:', error);
+                    showNotification('Error during field validation', 'error');
+                }
+            });
+            console.log('✅ Validate SFAF button connected');
+        }
+
+        // Save SFAF Button
+        const saveBtn = document.getElementById('saveSFAFBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('💾 Save SFAF button clicked');
+
+                try {
+                    sfafFieldManager.saveFormState();
+                    showNotification('SFAF data saved successfully', 'success');
+                } catch (error) {
+                    console.error('❌ Error saving SFAF data:', error);
+                    showNotification('Error saving SFAF data', 'error');
+                }
+            });
+            console.log('✅ Save SFAF button connected');
+        }
+
+        // Export SFAF Button
+        const exportBtn = document.getElementById('exportSFAFBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📤 Export SFAF button clicked');
+
+                try {
+                    const sfafData = sfafFieldManager.exportCompleteFormattedSFAF();
+                    downloadSFAF(sfafData, 'sfaf_record.txt');
+                    showNotification('SFAF record exported successfully', 'success');
+                } catch (error) {
+                    console.error('❌ Error exporting SFAF:', error);
+                    showNotification('Error exporting SFAF record', 'error');
+                }
+            });
+            console.log('✅ Export SFAF button connected');
+        }
+
+        // Delete SFAF Button
+        const deleteBtn = document.getElementById('deleteSFAFBtn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🗑️ Delete SFAF button clicked');
+
+                if (confirm('Are you sure you want to delete this SFAF record? This action cannot be undone.')) {
+                    try {
+                        sfafFieldManager.clearAllFields();
+                        showNotification('SFAF record deleted successfully', 'success');
+                    } catch (error) {
+                        console.error('❌ Error deleting SFAF record:', error);
+                        showNotification('Error deleting SFAF record', 'error');
+                    }
+                }
+            });
+            console.log('✅ Delete SFAF button connected');
+        }
+
+        // ===== IMPORT/EXPORT BUTTONS =====
+
+        // Import SFAF Button
+        const importBtn = document.getElementById('importSFAFBtn');
+        if (importBtn) {
+            importBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('📥 Import SFAF button clicked');
+
+                const fileInput = document.getElementById('sfafFile');
+                if (fileInput && fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const reader = new FileReader();
+
+                    reader.onload = (event) => {
+                        try {
+                            const sfafText = event.target.result;
+                            const parsedData = sfafFieldManager.parseImportedSFAF(sfafText);
+                            sfafFieldManager.populateFormFromData(parsedData);
+                            showNotification(`SFAF file imported successfully: ${file.name}`, 'success');
+                        } catch (error) {
+                            console.error('❌ Error importing SFAF file:', error);
+                            showNotification('Error importing SFAF file', 'error');
+                        }
+                    };
+
+                    reader.readAsText(file);
+                } else {
+                    showNotification('Please select a SFAF file to import', 'warning');
+                }
+            });
+            console.log('✅ Import SFAF button connected');
+        }
+
+        console.log('🎯 All SFAF Field Manager buttons operational with MCEB Pub 7 compliance');
+
+    }, 1500); // Wait 1.5 seconds for SFAF manager initialization
+});
+
+// ===== NOTIFICATION SYSTEM =====
+
+function showNotification(message, type = 'info') {
+    // Use existing notification system from manager.js if available
+    if (window.showNotification && typeof window.showNotification === 'function') {
+        window.showNotification(message, type);
+        return;
+    }
+
+    // Fallback notification system
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 4px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+
+    switch (type) {
+        case 'success':
+            notification.style.backgroundColor = '#28a745';
+            break;
+        case 'error':
+            notification.style.backgroundColor = '#dc3545';
+            break;
+        case 'warning':
+            notification.style.backgroundColor = '#ffc107';
+            notification.style.color = '#000';
+            break;
+        default:
+            notification.style.backgroundColor = '#007bff';
+    }
+
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.remove();
+    }, 4000);
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+
+document.addEventListener('keydown', (e) => {
+    // Ctrl/Cmd + S to save
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        const saveBtn = document.getElementById('saveSFAFBtn');
+        if (saveBtn) saveBtn.click();
+    }
+
+    // Ctrl/Cmd + E to export
+    if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        const exportBtn = document.getElementById('exportSFAFBtn');
+        if (exportBtn) exportBtn.click();
+    }
+
+    // Ctrl/Cmd + I to import
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+        e.preventDefault();
+        const importBtn = document.getElementById('importSFAFBtn');
+        if (importBtn) importBtn.click();
+    }
+})
+    

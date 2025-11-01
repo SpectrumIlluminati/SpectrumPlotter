@@ -1,0 +1,148 @@
+package services
+
+import (
+	"time"
+
+	"sfaf-plotter/internal/models"
+	"sfaf-plotter/internal/storage"
+
+	"github.com/google/uuid"
+)
+
+type MarkerService struct {
+	storage       storage.Storage
+	serialService *SerialService
+	coordService  *CoordinateService
+}
+
+func NewMarkerService(storage storage.Storage, serialService *SerialService, coordService *CoordinateService) *MarkerService {
+	return &MarkerService{
+		storage:       storage,
+		serialService: serialService,
+		coordService:  coordService,
+	}
+}
+
+func (ms *MarkerService) CreateMarker(req models.CreateMarkerRequest) (*models.MarkerResponse, error) {
+	marker := &models.Marker{
+		ID:          uuid.New().String(),
+		Serial:      ms.serialService.GenerateSerial(),
+		Lat:         req.Lat,
+		Lng:         req.Lng,
+		Frequency:   req.Frequency,
+		Notes:       req.Notes,
+		Type:        req.Type,
+		IsDraggable: true, // Default to draggable
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+	}
+
+	if marker.Type == "" {
+		marker.Type = "manual"
+	}
+
+	err := ms.storage.SaveMarker(marker)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create response with coordinate formats
+	coords := ms.coordService.GetAllFormats(marker.Lat, marker.Lng)
+
+	response := &models.MarkerResponse{
+		Marker: *marker,
+		Coordinates: struct {
+			Decimal string `json:"decimal"`
+			DMS     string `json:"dms"`
+			Compact string `json:"compact"`
+		}{
+			Decimal: coords.Decimal,
+			DMS:     coords.DMS,
+			Compact: coords.Compact,
+		},
+	}
+
+	return response, nil
+}
+
+func (ms *MarkerService) GetAllMarkers() ([]*models.Marker, error) {
+	return ms.storage.GetAllMarkers()
+}
+
+func (ms *MarkerService) GetMarker(id string) (*models.MarkerResponse, error) {
+	marker, err := ms.storage.GetMarker(id)
+	if err != nil {
+		return nil, err
+	}
+
+	coords := ms.coordService.GetAllFormats(marker.Lat, marker.Lng)
+
+	response := &models.MarkerResponse{
+		Marker: *marker,
+		Coordinates: struct {
+			Decimal string `json:"decimal"`
+			DMS     string `json:"dms"`
+			Compact string `json:"compact"`
+		}{
+			Decimal: coords.Decimal,
+			DMS:     coords.DMS,
+			Compact: coords.Compact,
+		},
+	}
+
+	return response, nil
+}
+
+func (ms *MarkerService) UpdateMarker(id string, req models.UpdateMarkerRequest) (*models.MarkerResponse, error) {
+	marker, err := ms.storage.GetMarker(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update fields if provided
+	if req.Lat != nil {
+		marker.Lat = *req.Lat
+	}
+	if req.Lng != nil {
+		marker.Lng = *req.Lng
+	}
+	if req.Frequency != nil {
+		marker.Frequency = *req.Frequency
+	}
+	if req.Notes != nil {
+		marker.Notes = *req.Notes
+	}
+
+	marker.UpdatedAt = time.Now()
+
+	err = ms.storage.UpdateMarker(id, marker)
+	if err != nil {
+		return nil, err
+	}
+
+	// Return the updated marker with coordinates
+	return ms.GetMarker(id)
+}
+
+func (ms *MarkerService) DeleteMarker(id string) error {
+	return ms.storage.DeleteMarker(id)
+}
+
+// Add this method to MarkerService in marker.txt
+func (ms *MarkerService) DeleteAllMarkers() error {
+	// Get all markers first
+	markers, err := ms.storage.GetAllMarkers()
+	if err != nil {
+		return err
+	}
+
+	// Delete each marker individually
+	for _, marker := range markers {
+		err := ms.storage.DeleteMarker(marker.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

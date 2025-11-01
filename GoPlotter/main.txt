@@ -1,0 +1,149 @@
+// main.go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"sfaf-plotter/config"
+	"sfaf-plotter/handlers"
+	"sfaf-plotter/repositories"
+	"sfaf-plotter/services"
+	"sfaf-plotter/storage"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
+)
+
+func main() {
+	// Initialize database connection
+	db, err := config.ConnectDatabase()
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer db.Close()
+
+	// Wrap with sqlx for enhanced functionality
+	sqlxDB := sqlx.NewDb(db, "postgres")
+
+	// Initialize storage (MISSING)
+	storage, err := storage.NewJSONStorage("./data")
+	if err != nil {
+		log.Fatal("Failed to initialize storage:", err)
+	}
+
+	// Initialize repositories
+	markerRepo := repositories.NewMarkerRepository(sqlxDB)
+	iracNotesRepo := repositories.NewIRACNotesRepository(sqlxDB)
+
+	// Initialize services in correct dependency order
+	serialService := services.NewSerialService()
+	coordService := services.NewCoordinateService()
+
+	// CREATE MARKER SERVICE BEFORE USING IT
+	markerService := services.NewMarkerService(markerRepo, iracNotesRepo, serialService, coordService)
+
+	// Now other services can reference markerService
+	sfafService := services.NewSFAFService(storage, coordService)
+	geometryService := services.NewGeometryService(storage, markerService, serialService, coordService)
+
+	// Initialize handlers with properly created services
+	markerHandler := handlers.NewMarkerHandler(markerService)
+	sfafHandler := handlers.NewSFAFHandler(sfafService, markerService) // ADD SFAF HANDLER
+	geometryHandler := handlers.NewGeometryHandler(geometryService)
+
+	// Setup Gin router
+	r := gin.Default()
+
+	// CORS middleware
+	r.Use(func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
+
+	// Static file serving
+	r.Static("/css", "./web/static/css")
+	r.Static("/images", "./web/static/images")
+	r.Static("/js", "./web/static/js")
+	r.Static("/references", "./web/static/references")
+	r.LoadHTMLGlob("web/templates/*")
+
+	// Main page route
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "index.html", gin.H{
+			"title": "SFAF Plotter - Military Frequency Coordination Mapping",
+		})
+	})
+
+	// Add database viewer route (Source: main.txt pattern)
+	r.GET("/database", func(c *gin.Context) {
+		c.HTML(200, "database.html", gin.H{
+			"title": "SFAF Plotter - Database Viewer",
+		})
+	})
+
+	// API routes
+	api := r.Group("/api")
+	{
+
+		api.GET("/convert-coords", func(c *gin.Context) {
+			lat := c.Query("lat")
+			lng := c.Query("lng")
+
+			latFloat, _ := strconv.ParseFloat(lat, 64)
+			lngFloat, _ := strconv.ParseFloat(lng, 64)
+
+			// Use coordinate service for conversion
+			coordFormats := coordService.GetAllFormats(latFloat, lngFloat)
+
+			c.JSON(http.StatusOK, gin.H{
+				"decimal": fmt.Sprintf("%.4f, %.4f", latFloat, lngFloat),
+				"dms":     coordFormats.DMS,
+				"compact": coordFormats.Compact,
+			})
+		})
+
+		// Existing marker management routes
+		api.POST("/markers", markerHandler.CreateMarker)
+		api.GET("/markers", markerHandler.GetAllMarkers)
+		api.GET("/markers/:id", markerHandler.GetMarker)
+		api.PUT("/markers/:id", markerHandler.UpdateMarker)
+		api.DELETE("/markers/:id", markerHandler.DeleteMarker)
+		api.DELETE("/markers", markerHandler.DeleteAllMarkers)
+
+		// IRAC Notes management routes
+		api.GET("/irac-notes", markerHandler.GetIRACNotes)
+		api.POST("/markers/irac-notes", markerHandler.AddIRACNoteToMarker)
+		api.DELETE("/markers/irac-notes", markerHandler.RemoveIRACNoteFromMarker)
+
+		// ✅ ADD SFAF ROUTES
+		api.GET("/sfaf/object-data/:markerId", sfafHandler.GetObjectData)
+		api.POST("/sfaf", sfafHandler.CreateSFAF)
+		api.PUT("/sfaf/:id", sfafHandler.UpdateSFAF)
+		api.DELETE("/sfaf/:id", sfafHandler.DeleteSFAF)
+
+		// ✅ ADD GEOMETRY ROUTES
+		api.POST("/geometry/circle", geometryHandler.CreateCircle)
+		api.POST("/geometry/polygon", geometryHandler.CreatePolygon)
+		api.POST("/geometry/rectangle", geometryHandler.CreateRectangle)
+		api.GET("/geometry", geometryHandler.GetAllGeometries)
+		api.DELETE("/geometry/:id", geometryHandler.DeleteGeometry)
+	}
+
+	log.Println("🚀 SFAF Plotter server starting on :8080")
+	log.Println("📊 PostgreSQL database connected")
+	log.Println("🗺️ MCEB Publication 7 compliance enabled")
+
+	if err := r.Run(":8080"); err != nil {
+		log.Fatal("Failed to start server:", err)
+	}
+}

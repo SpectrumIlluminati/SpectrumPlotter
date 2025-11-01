@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFAF Plotter - Database Viewer</title>
+    <link rel="stylesheet" href="/css/db_viewer.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-database"></i> SFAF Plotter Database Viewer</h1>
+            <div class="header-actions">
+                <a href="/" class="btn btn-secondary"><i class="fas fa-map"></i> Back to Map</a>
+                <button id="refreshBtn" class="btn btn-primary"><i class="fas fa-sync"></i> Refresh</button>
+                <button id="exportBtn" class="btn btn-success"><i class="fas fa-download"></i> Export</button>
+            </div>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="markers">
+                <i class="fas fa-map-marker-alt"></i> Markers
+            </button>
+            <button class="tab-btn" data-tab="sfaf">
+                <i class="fas fa-file-alt"></i> SFAF Records
+            </button>
+            <button class="tab-btn" data-tab="irac">
+                <i class="fas fa-clipboard-list"></i> IRAC Notes
+            </button>
+            <button class="tab-btn" data-tab="analytics">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </button>
+        </nav>
+
+        <!-- Markers Tab -->
+        <div id="markers-tab" class="tab-content active">
+            <div class="table-controls">
+                <div class="search-filter">
+                    <input type="text" id="markerSearch" placeholder="Search markers..." class="search-input">
+                    <select id="markerTypeFilter" class="filter-select">
+                        <option value="">All Types</option>
+                        <option value="manual">Manual</option>
+                        <option value="imported">Imported</option>
+                    </select>
+                </div>
+                <div class="table-actions">
+                    <button id="addMarkerBtn" class="btn btn-primary"><i class="fas fa-plus"></i> Add Marker</button>
+                    <button id="bulkEditBtn" class="btn btn-secondary"><i class="fas fa-edit"></i> Bulk Edit</button>
+                    <button id="deleteSelectedBtn" class="btn btn-danger"><i class="fas fa-trash"></i> Delete
+                        Selected</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="markersTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll"></th>
+                            <th>Serial</th>
+                            <th>Coordinates</th>
+                            <th>Frequency</th>
+                            <th>Type</th>
+                            <th>Created</th>
+                            <th>SFAF Fields</th>
+                            <th>IRAC Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="markersTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination">
+                <button id="prevPage" class="btn btn-secondary"><i class="fas fa-chevron-left"></i></button>
+                <span id="pageInfo">Page 1 of 1</span>
+                <button id="nextPage" class="btn btn-secondary"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- SFAF Records Tab -->
+        <!-- Enhanced SFAF Records Tab -->
+        <!-- Enhanced SFAF Records Tab with Editable Grid -->
+        <div id="sfaf-tab" class="tab-content">
+            <div class="table-controls">
+                <div class="search-filter">
+                    <input type="text" id="sfafSearch" placeholder="Search by Serial or Field..." class="search-input">
+                    <select id="sfafSeriesFilter" class="filter-select">
+                        <option value="">All Series</option>
+                        <option value="100">100 Series - Agency Info</option>
+                        <option value="200">200 Series - System Info</option>
+                        <option value="300">300 Series - Location Info</option>
+                        <option value="400">400 Series - Technical</option>
+                        <option value="500">500 Series - Equipment</option>
+                        <option value="600">600 Series - Operational</option>
+                        <option value="700">700 Series - Coordination</option>
+                        <option value="800">800 Series - Administrative</option>
+                        <option value="900">900 Series - Comments</option>
+                    </select>
+                    <select id="sfafFieldTypeFilter" class="filter-select">
+                        <option value="">All Field Types</option>
+                        <option value="text">Text Fields</option>
+                        <option value="select">Select Fields</option>
+                        <option value="date">Date Fields</option>
+                        <option value="number">Number Fields</option>
+                        <option value="textarea">Text Area Fields</option>
+                    </select>
+                </div>
+                <div class="table-actions">
+                    <button id="saveAllSFAFBtn" class="btn btn-success">
+                        <i class="fas fa-save"></i> Save All Changes
+                    </button>
+                    <button id="addSFAFFieldBtn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Field
+                    </button>
+                    <button id="bulkEditSFAFBtn" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> Bulk Edit
+                    </button>
+                    <button id="exportSFAFBtn" class="btn btn-success">
+                        <i class="fas fa-download"></i> Export SFAF
+                    </button>
+                </div>
+            </div>
+
+            <div class="sfaf-grid-container">
+                <div class="sfaf-grid-header">
+                    <h3>SFAF Fields - Editable Grid View (MCEB Publication 7 Compliance)</h3>
+                    <div class="grid-stats">
+                        <span id="totalFieldsCount">Total Fields: 0</span>
+                        <span id="changedFieldsCount">Modified: 0</span>
+                        <span id="validationStatus">Status: Ready</span>
+                    </div>
+                </div>
+
+                <div class="table-container editable-grid">
+                    <table id="sfafGridTable" class="data-table sfaf-grid">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Serial (Primary Key)</th>
+                                <th>Field Number</th>
+                                <th>Field Label</th>
+                                <th class="editable-col">Field Value</th>
+                                <th>Series</th>
+                                <th>Type</th>
+                                <th>Required</th>
+                                <th>Last Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sfafGridTableBody">
+                            <!-- Dynamic editable content -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="pagination">
+                <button id="prevSFAFPage" class="btn btn-secondary"><i class="fas fa-chevron-left"></i></button>
+                <span id="sfafPageInfo">Page 1 of 1</span>
+                <button id="nextSFAFPage" class="btn btn-secondary"><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- IRAC Notes Tab -->
+        <div id="irac-tab" class="tab-content">
+            <div class="table-container">
+                <table id="iracTable" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Field Placement</th>
+                            <th>Agency</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="iracTableBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3>System Overview</h3>
+                    <div id="systemStats"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Frequency Distribution</h3>
+                    <div id="frequencyChart"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>MCEB Publication 7 Compliance</h3>
+                    <div id="complianceReport"></div>
+                </div>
+                <div class="analytics-card">
+                    <h3>Geographic Distribution</h3>
+                    <div id="geoStats"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Edit Marker</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <!-- Dynamic form content -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" form="editForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/db_viewer.js"></script>
+</body>
+
+</html>
