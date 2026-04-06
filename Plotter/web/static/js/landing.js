@@ -60,6 +60,7 @@
         localStorage.removeItem('sfaf_logged_in');
         localStorage.removeItem('sfaf_username');
         localStorage.removeItem('sfaf_role');
+        localStorage.removeItem('sfaf_token');
         isLoggedIn = false;
     }
 
@@ -216,8 +217,12 @@
         if (!confirm('Are you sure you want to logout?')) return;
 
         try {
-            await fetch('/api/auth/logout', { method: 'POST' });
-        } catch { /* ignore network errors */ }
+            // Send token in Authorization header as fallback for browsers that
+            // don't attach the cookie (e.g., strict SameSite contexts).
+            const token = localStorage.getItem('sfaf_token') || '';
+            const headers = token ? { 'Authorization': token } : {};
+            await fetch('/api/auth/logout', { method: 'POST', headers });
+        } catch { /* ignore network errors — cookie is cleared server-side */ }
 
         clearLocalAuth();
 
@@ -227,11 +232,18 @@
             loginBtn.onclick = openLoginModal;
         }
 
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.style.display = 'none';
+
         const adminBtn = document.getElementById('adminBtn');
         if (adminBtn) adminBtn.style.display = 'none';
 
         showNotification('Logged out successfully', 'success');
     }
+
+    // Export logout so the landing.html onclick="logout()" can reach it.
+    // All other exported functions use the same window.X pattern.
+    window.logout = logout;
 
     /**
      * Navigate to module

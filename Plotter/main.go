@@ -11,24 +11,13 @@ import (
 	"sfaf-plotter/repositories"
 	"sfaf-plotter/services"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
-
-// Helper function to join string slices
-func joinStrings(arr []string) string {
-	result := ""
-	for i, s := range arr {
-		if i > 0 {
-			result += ", "
-		}
-		result += s
-	}
-	return result
-}
 
 func main() {
 	// Load environment variables from .env file
@@ -142,8 +131,8 @@ func main() {
 		}
 
 		c.Header("Access-Control-Allow-Origin", origin)
-		c.Header("Access-Control-Allow-Methods", joinStrings(appConfig.CORS.AllowedMethods))
-		c.Header("Access-Control-Allow-Headers", joinStrings(appConfig.CORS.AllowedHeaders))
+		c.Header("Access-Control-Allow-Methods", strings.Join(appConfig.CORS.AllowedMethods, ","))
+		c.Header("Access-Control-Allow-Headers", strings.Join(appConfig.CORS.AllowedHeaders, ","))
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -261,61 +250,21 @@ func main() {
 
 			// Public: list active installations for the account-request form dropdown
 			auth.GET("/public-installations", func(c *gin.Context) {
-				type publicInstallation struct {
-					ID           string `json:"id" db:"id"`
-					Name         string `json:"name" db:"name"`
-					Code         string `json:"code" db:"code"`
-					Organization string `json:"organization" db:"organization"`
-				}
-				var list []publicInstallation
-				err := sqlxDB.Select(&list, `
-					SELECT id::text, name, COALESCE(code, '') AS code, COALESCE(organization, '') AS organization
-					FROM installations
-					WHERE is_active = true
-					ORDER BY name`)
+				list, err := installationRepo.GetPublicInstallations()
 				if err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load installations"})
 					return
 				}
-				if list == nil {
-					list = []publicInstallation{}
-				}
 				c.JSON(http.StatusOK, gin.H{"installations": list})
 			})
 
-			// Public: list active units for the account-request form dropdown
-			// Optional query param: ?installation_id=<uuid> to filter by installation
+			// Public: list active units for the account-request form dropdown.
+			// Optional query param: ?installation_id=<uuid> to filter by installation.
 			auth.GET("/public-units", func(c *gin.Context) {
-				type publicUnit struct {
-					ID           string `json:"id" db:"id"`
-					Name         string `json:"name" db:"name"`
-					UnitCode     string `json:"unit_code" db:"unit_code"`
-					Organization string `json:"organization" db:"organization"`
-				}
-				var units []publicUnit
-				var err error
-				installationID := c.Query("installation_id")
-				if installationID != "" {
-					err = sqlxDB.Select(&units, `
-						SELECT id::text, name, unit_code,
-						       COALESCE(organization, '') AS organization
-						FROM units
-						WHERE is_active = true AND installation_id = $1
-						ORDER BY name`, installationID)
-				} else {
-					err = sqlxDB.Select(&units, `
-						SELECT id::text, name, unit_code,
-						       COALESCE(organization, '') AS organization
-						FROM units
-						WHERE is_active = true
-						ORDER BY name`)
-				}
+				units, err := frequencyRepo.GetPublicUnits(c.Query("installation_id"))
 				if err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load units"})
 					return
-				}
-				if units == nil {
-					units = []publicUnit{}
 				}
 				c.JSON(http.StatusOK, gin.H{"units": units})
 			})
