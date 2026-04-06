@@ -86,17 +86,10 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		}
 	}
 
-	// Delete session
-	err = h.authService.Logout(token)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"success": false,
-			"message": "Failed to logout",
-		})
-		return
-	}
-
-	// Clear cookie
+	// Delete session — always clear the cookie regardless of whether the
+	// server-side delete succeeded, so the browser can never get stuck
+	// with a cookie pointing at a dead session.
+	_ = h.authService.Logout(token)
 	c.SetCookie("session_token", "", -1, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{

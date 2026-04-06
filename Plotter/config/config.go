@@ -12,7 +12,6 @@ type AppConfig struct {
 	Server   ServerConfig
 	Database DatabaseConfig
 	CORS     CORSConfig
-	Features FeatureFlags
 }
 
 // ServerConfig holds server-related configuration
@@ -30,12 +29,6 @@ type CORSConfig struct {
 	AllowedHeaders []string
 }
 
-// FeatureFlags holds feature flag configuration
-type FeatureFlags struct {
-	EnableMCEBValidation     bool
-	EnableCoordinateCaching  bool
-}
-
 // Load loads the complete application configuration from environment variables
 func Load() *AppConfig {
 	log.Println("📝 Loading application configuration from environment variables...")
@@ -44,7 +37,6 @@ func Load() *AppConfig {
 		Server:   loadServerConfig(),
 		Database: *NewDatabaseConfig(),
 		CORS:     loadCORSConfig(),
-		Features: loadFeatureFlags(),
 	}
 }
 
@@ -65,13 +57,6 @@ func loadCORSConfig() CORSConfig {
 	}
 }
 
-func loadFeatureFlags() FeatureFlags {
-	return FeatureFlags{
-		EnableMCEBValidation:    getEnvBool("ENABLE_MCEB_VALIDATION", true),
-		EnableCoordinateCaching: getEnvBool("ENABLE_COORDINATE_CACHING", true),
-	}
-}
-
 // GetServerAddress returns the full server address
 func (c *AppConfig) GetServerAddress() string {
 	return fmt.Sprintf("%s:%s", c.Server.Host, c.Server.Port)
@@ -88,15 +73,5 @@ func (c *AppConfig) PrintConfiguration() {
 	log.Printf("   Server: %s (mode: %s)", c.GetServerAddress(), c.Server.GinMode)
 	log.Printf("   Database: %s:%s/%s", c.Database.Host, c.Database.Port, c.Database.DBName)
 	log.Printf("   CORS Origins: %v", c.CORS.AllowedOrigins)
-	log.Printf("   MC4EB Validation: %v", c.Features.EnableMCEBValidation)
-	log.Printf("   Coordinate Caching: %v", c.Features.EnableCoordinateCaching)
 }
 
-// getEnvBool retrieves a boolean environment variable with a fallback default
-func getEnvBool(key string, defaultValue bool) bool {
-	value := getEnv(key, "")
-	if value == "" {
-		return defaultValue
-	}
-	return value == "true" || value == "1" || value == "yes"
-}

@@ -993,47 +993,6 @@ func (h *FrequencyHandler) SetRequestCoordinations(c *gin.Context) {
 // Helper middleware for frequency routes
 // ============================================
 
-// RequireAuth middleware to verify user is authenticated
-func RequireAuth() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// This should check session token and set userID, role in context
-		// For now, this is a placeholder - integrate with your existing auth
-		token := c.GetHeader("Authorization")
-		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "authorization required"})
-			c.Abort()
-			return
-		}
-
-		// TODO: Validate token and extract user info
-		// For now, just check if token exists
-		c.Next()
-	}
-}
-
-// RequireRole middleware to verify user has required role
-func RequireRole(allowedRoles ...string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		role, exists := c.Get("role")
-		if !exists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "role not found"})
-			c.Abort()
-			return
-		}
-
-		roleStr := role.(string)
-		for _, allowedRole := range allowedRoles {
-			if roleStr == allowedRole {
-				c.Next()
-				return
-			}
-		}
-
-		c.JSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
-		c.Abort()
-	}
-}
-
 // CleanupOrphanedAssignments removes frequency assignments that don't have corresponding SFAF records
 // POST /api/frequency/cleanup-orphaned (admin only)
 func (h *FrequencyHandler) CleanupOrphanedAssignments(c *gin.Context) {

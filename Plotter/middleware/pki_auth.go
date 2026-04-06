@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -176,66 +175,6 @@ func extractCertificateInfo(cert *x509.Certificate) CertificateInfo {
 
 	info.ValidationMsg = "Certificate is valid"
 	return info
-}
-
-// SessionAuthMiddleware validates session tokens
-func SessionAuthMiddleware(logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Check for Authorization header
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Authorization header required",
-			})
-			c.Abort()
-			return
-		}
-
-		// Extract bearer token
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Invalid authorization header format",
-			})
-			c.Abort()
-			return
-		}
-
-		token := parts[1]
-
-		// TODO: Validate token against database
-		// For now, just store in context
-		c.Set("session_token", token)
-		c.Set("authenticated_via", "session")
-
-		c.Next()
-	}
-}
-
-// RequireAuth is a middleware that requires authentication
-func RequireAuth(logger *zap.Logger) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Check if already authenticated via PKI or session
-		if _, exists := c.Get("certificate_info"); exists {
-			c.Next()
-			return
-		}
-
-		if _, exists := c.Get("session_token"); exists {
-			c.Next()
-			return
-		}
-
-		logger.Warn("Unauthorized access attempt",
-			zap.String("path", c.Request.URL.Path),
-			zap.String("ip", c.ClientIP()),
-		)
-
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Authentication required",
-		})
-		c.Abort()
-	}
 }
 
 // RequireSessionAuth validates the session_token cookie against the database.
