@@ -1,0 +1,167 @@
+/*
+ * shared-nav.css
+ * Navigation bar styles for all non-map-viewer pages.
+ * Uses position: sticky so page content flows naturally below without
+ * requiring any padding-top adjustments.
+ *
+ * map_viewer.html uses navBar.css instead (which needs position: fixed
+ * and contains map-specific overrides).
+ */
+
+/* ── Variables ─────────────────────────────────────────────────────────── */
+:root {
+    --nav-height: 72px;
+    --nav-bg:     rgba(15, 15, 35, 0.98);
+    --nav-border: rgba(102, 126, 234, 0.15);
+    --nav-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    --accent-start: #667eea;
+    --accent-end:   #764ba2;
+    --link-idle:    rgba(102, 126, 234, 0.10);
+    --link-border:  rgba(102, 126, 234, 0.20);
+    --link-color:   #94a3b8;
+}
+
+/* ── Bar ────────────────────────────────────────────────────────────────── */
+.navigation-bar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--nav-height);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    background: var(--nav-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--nav-border);
+    box-shadow: var(--nav-shadow);
+    z-index: 2200;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Contain stacking context so the absolute-center trick works */
+    isolation: isolate;
+}
+
+/* ── Branding (left) ────────────────────────────────────────────────────── */
+.nav-logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.nav-logo i {
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ── Center links — ABSOLUTELY POSITIONED so show/hide never shifts logo ─ */
+.nav-links-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    /* Prevent wrapping that would change the bar height */
+    white-space: nowrap;
+    /* Ensure clicks pass through if it happens to overlap right section */
+    pointer-events: none;
+}
+.nav-links-center > * {
+    pointer-events: auto;
+}
+
+/* ── Right actions ──────────────────────────────────────────────────────── */
+.nav-links-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* ── Nav links (shared by center and right) ─────────────────────────────── */
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: var(--link-idle);
+    color: var(--link-color);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid var(--link-border);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+    white-space: nowrap;
+}
+
+.nav-link:hover {
+    background: rgba(102, 126, 234, 0.20);
+    color: #a78bfa;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.25);
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.40);
+}
+
+.nav-link i {
+    font-size: 14px;
+}
+
+/* ── Responsive: hide link labels below 1100px ──────────────────────────── */
+@media (max-width: 1100px) {
+    .nav-links-center {
+        gap: 2px;
+    }
+    .nav-link {
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+    .nav-link span {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .navigation-bar {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 8px 12px;
+        gap: 6px;
+    }
+    .nav-links-center {
+        position: static;
+        transform: none;
+        flex-wrap: wrap;
+        justify-content: center;
+        order: 3;
+        width: 100%;
+    }
+    .nav-links-right {
+        margin-left: auto;
+    }
+    .nav-link span {
+        display: inline;
+    }
+}

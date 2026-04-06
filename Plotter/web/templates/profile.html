@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.title}} - User Profile</title>
+    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/shared-nav.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+        <div class="navigation-bar">
+        <div class="nav-logo">
+            <i class="fas fa-tower-broadcast"></i>
+            <span>SFAF Plotter</span>
+        </div>
+        <div class="nav-links nav-links-center">
+            <a href="/map-viewer" class="nav-link">
+                <i class="fas fa-map-marked-alt"></i><span>Map</span>
+            </a>
+            <a href="/database" class="nav-link">
+                <i class="fas fa-database"></i><span>Database</span>
+            </a>
+            <a href="/frequency" class="nav-link">
+                <i class="fas fa-broadcast-tower"></i><span>Frequencies</span>
+            </a>
+            <a href="/workbox" class="nav-link ism-nav-link" style="display:none">
+                <i class="fas fa-inbox"></i><span>Workbox</span>
+            </a>
+            <a href="/frequency-nomination" class="nav-link">
+                <i class="fas fa-wave-square"></i><span>Freq Tool</span>
+            </a>
+            <a href="/view-manager" class="nav-link">
+                <i class="fas fa-table"></i><span>Table Manager</span>
+            </a>
+            <a href="/admin" class="nav-link admin-console-link" style="display:none">
+                <i class="fas fa-shield-halved"></i><span>Admin</span>
+            </a>
+        </div>
+        <div class="nav-links nav-links-right">
+            <a href="/profile" class="nav-link active" title="Account">
+                <i class="fas fa-user-circle"></i><span>Account</span>
+            </a>
+            <button class="nav-link" onclick="handleLogout()" title="Logout"
+                    style="background:none;border:none;cursor:pointer;color:inherit;">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+            </button>
+        </div>
+    </div>
+<!-- Main Content -->
+    <div class="profile-container">
+        <!-- Sidebar -->
+        <aside class="profile-sidebar">
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h2 id="profileUsername" class="profile-name">Loading...</h2>
+                <p id="profileRole" class="profile-role">User</p>
+                <div id="authMethod" class="auth-badge">
+                    <i class="fas fa-key"></i> Password Auth
+                </div>
+            </div>
+
+            <nav class="profile-nav">
+                <button class="profile-nav-item active" data-section="account" onclick="switchSection('account')">
+                    <i class="fas fa-user"></i> Account
+                </button>
+                <button class="profile-nav-item" data-section="security" onclick="switchSection('security')">
+                    <i class="fas fa-shield-alt"></i> Security
+                </button>
+                <button class="profile-nav-item" data-section="preferences" onclick="switchSection('preferences')">
+                    <i class="fas fa-cog"></i> Preferences
+                </button>
+                <button class="profile-nav-item" data-section="certificates" onclick="switchSection('certificates')">
+                    <i class="fas fa-certificate"></i> Certificates
+                </button>
+                <button class="profile-nav-item" data-section="activity" onclick="switchSection('activity')">
+                    <i class="fas fa-history"></i> Activity Log
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="profile-content">
+            <!-- Account Section -->
+            <section id="account-section" class="content-section active">
+                <div class="section-header">
+                    <h1><i class="fas fa-user"></i> Account Information</h1>
+                    <p>Manage your account details and contact information</p>
+                </div>
+
+                <div class="profile-form">
+                    <!-- Identity -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> Username</label>
+                            <input type="text" id="accountUsername" class="form-input" readonly>
+                            <small>Username cannot be changed</small>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> Email Address</label>
+                            <input type="email" id="accountEmail" class="form-input" placeholder="user@example.mil">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label><i class="fas fa-id-card"></i> First Name</label>
+                            <input type="text" id="accountFirstName" class="form-input" placeholder="John">
+                        </div>
+                        <div class="form-group" style="flex:0 0 80px;">
+                            <label>MI</label>
+                            <input type="text" id="accountMiddleInitial" class="form-input" placeholder="A" maxlength="1" style="text-transform:uppercase;">
+                        </div>
+                        <div class="form-group" style="flex:2;">
+                            <label>Last Name</label>
+                            <input type="text" id="accountLastName" class="form-input" placeholder="Smith">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-sitemap"></i> Service / Organization</label>
+                            <select id="accountOrganization" class="form-input">
+                                <option value="">— Select service branch —</option>
+                                <option value="USAF">USAF — United States Air Force</option>
+                                <option value="USSF">USSF — United States Space Force</option>
+                                <option value="USA">USA — United States Army</option>
+                                <option value="USN">USN — United States Navy</option>
+                                <option value="USMC">USMC — United States Marine Corps</option>
+                                <option value="USCG">USCG — United States Coast Guard</option>
+                                <option value="Joint/DoD">Joint / DoD</option>
+                                <option value="Other">Other / Civilian</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Commercial Phone <span style="color:var(--danger)">*</span></label>
+                            <input type="tel" id="accountPhone" class="form-input" placeholder="e.g. (555) 123-4567" required>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> DSN Phone <span class="muted">(optional)</span></label>
+                            <input type="tel" id="accountPhoneDSN" class="form-input" placeholder="e.g. 312-123-4567">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-globe"></i> Unified Command</label>
+                            <select id="accountUnifiedCommand" class="form-input">
+                                <option value="">— Select unified command —</option>
+                                <option value="USCENTCOM">CENTCOM — Central Command</option>
+                                <option value="USCYBERCOM">CYBERCOM — Cyber Command</option>
+                                <option value="USEUCOM">EUCOM — European Command</option>
+                                <option value="USINDOPACOM">INDOPACOM — Indo-Pacific Command</option>
+                                <option value="USNORTHCOM">NORTHCOM — Northern Command</option>
+                                <option value="USSOCOM">SOCOM — Special Operations Command</option>
+                                <option value="USSOUTHCOM">SOUTHCOM — Southern Command</option>
+                                <option value="USSPACECOM">SPACECOM — Space Command</option>
+                                <option value="USSTRATCOM">STRATCOM — Strategic Command</option>
+                                <option value="USTRANSCOM">TRANSCOM — Transportation Command</option>
+                                <option value="USAFRICOM">AFRICOM — Africa Command</option>
+                                <option value="N/A">N/A — Not Applicable</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Unit Assignment -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> Installation</label>
+                            <select id="accountInstallation" class="form-input" onchange="onProfileInstallationChange()">
+                                <option value="">Loading installations...</option>
+                            </select>
+                            <small>Used for frequency request routing</small>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-flag"></i> Unit</label>
+                            <select id="accountUnit" class="form-input">
+                                <option value="">Loading...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Service Branch / Pay Grade -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-shield-alt"></i> Service Branch</label>
+                            <select id="accountServiceBranch" class="form-input" onchange="onProfileBranchChange()">
+                                <option value="">— Select Branch —</option>
+                                <option value="Air Force">Air Force</option>
+                                <option value="Space Force">Space Force</option>
+                                <option value="Army">Army</option>
+                                <option value="Navy">Navy</option>
+                                <option value="Marines">Marine Corps</option>
+                                <option value="Coast Guard">Coast Guard</option>
+                                <option value="Civilian">Civilian (DoD)</option>
+                                <option value="Contractor">Contractor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-medal"></i> Pay Grade</label>
+                            <select id="accountPayGrade" class="form-input">
+                                <option value="">— Select Branch First —</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Default ISM Office -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-paper-plane"></i> Default ISM Office</label>
+                            <select id="accountDefaultISM" class="form-input">
+                                <option value="">— None / Ask each time —</option>
+                            </select>
+                            <small>Which installation's ISM will receive your frequency requests (Field 206)</small>
+                        </div>
+                    </div>
+
+                    <!-- Role / Dates (read-only) -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user-tag"></i> Role</label>
+                            <select id="accountRole" class="form-select" disabled>
+                                <option value="operator">Operator</option>
+                                <option value="ism">ISM</option>
+                                <option value="command">Command</option>
+                                <option value="combatant_command">Combatant Command</option>
+                                <option value="agency">Agency</option>
+                                <option value="ntia">NTIA</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <small>Contact administrator to change role</small>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Member Since</label>
+                            <input type="text" id="accountCreatedAt" class="form-input" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn-primary" onclick="saveAccountInfo()">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button class="btn-secondary" onclick="loadProfileData()">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Section -->
+            <section id="security-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-shield-alt"></i> Security Settings</h1>
+                    <p>Manage your authentication methods and security preferences</p>
+                </div>
+
+                <div class="security-grid">
+                    <!-- Password Change -->
+                    <div class="security-card">
+                        <div class="card-header">
+                            <i class="fas fa-key"></i>
+                            <h3>Change Password</h3>
+                        </div>
+                        <form onsubmit="changePassword(event)">
+                            <div class="form-group">
+                                <label>Current Password</label>
+                                <input type="password" id="currentPassword" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="password" id="newPassword" class="form-input" required minlength="8">
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm New Password</label>
+                                <input type="password" id="confirmPassword" class="form-input" required minlength="8">
+                            </div>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-lock"></i> Update Password
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Active Sessions -->
+                    <div class="security-card">
+                        <div class="card-header">
+                            <i class="fas fa-desktop"></i>
+                            <h3>Active Sessions</h3>
+                        </div>
+                        <div id="activeSessions" class="sessions-list">
+                            <div class="session-item current">
+                                <div class="session-icon">
+                                    <i class="fas fa-laptop"></i>
+                                </div>
+                                <div class="session-info">
+                                    <strong>Current Session</strong>
+                                    <p><i class="fas fa-globe"></i> 127.0.0.1</p>
+                                    <p><i class="fas fa-clock"></i> Active now</p>
+                                </div>
+                                <span class="session-badge current-badge">Current</span>
+                            </div>
+                        </div>
+                        <button class="btn-danger" onclick="revokeAllSessions()">
+                            <i class="fas fa-times-circle"></i> Revoke All Other Sessions
+                        </button>
+                    </div>
+
+                    <!-- Two-Factor Authentication -->
+                    <div class="security-card">
+                        <div class="card-header">
+                            <i class="fas fa-mobile-alt"></i>
+                            <h3>Two-Factor Authentication</h3>
+                        </div>
+                        <div class="tfa-status">
+                            <div class="status-indicator disabled">
+                                <i class="fas fa-times-circle"></i> Disabled
+                            </div>
+                            <p>Add an extra layer of security to your account</p>
+                        </div>
+                        <button class="btn-primary" onclick="enableTwoFactor()">
+                            <i class="fas fa-shield-alt"></i> Enable 2FA
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Preferences Section -->
+            <section id="preferences-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-cog"></i> User Preferences</h1>
+                    <p>Customize your SFAF Plotter experience</p>
+                </div>
+
+                <div class="preferences-grid">
+                    <!-- Display Preferences -->
+                    <div class="pref-card">
+                        <h3><i class="fas fa-palette"></i> Display</h3>
+                        <div class="pref-option">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="prefDarkMode" class="toggle-input">
+                                <span class="toggle-switch"></span>
+                                <span>Dark Mode</span>
+                            </label>
+                            <p class="pref-description">Use dark theme across the platform</p>
+                        </div>
+                        <div class="pref-option">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="prefCompactView" class="toggle-input">
+                                <span class="toggle-switch"></span>
+                                <span>Compact View</span>
+                            </label>
+                            <p class="pref-description">Reduce spacing for more content</p>
+                        </div>
+                    </div>
+
+                    <!-- Notification Preferences -->
+                    <div class="pref-card">
+                        <h3><i class="fas fa-bell"></i> Notifications</h3>
+                        <div class="pref-option">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="prefEmailNotif" class="toggle-input" checked>
+                                <span class="toggle-switch"></span>
+                                <span>Email Notifications</span>
+                            </label>
+                            <p class="pref-description">Receive updates via email</p>
+                        </div>
+                        <div class="pref-option">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="prefSoundNotif" class="toggle-input">
+                                <span class="toggle-switch"></span>
+                                <span>Sound Alerts</span>
+                            </label>
+                            <p class="pref-description">Play sound for important events</p>
+                        </div>
+                    </div>
+
+                    <!-- Map Preferences -->
+                    <div class="pref-card">
+                        <h3><i class="fas fa-map"></i> Map Settings</h3>
+                        <div class="form-group">
+                            <label>Default Region</label>
+                            <select id="prefDefaultRegion" class="form-select">
+                                <option value="CONUS">CONUS (Continental US)</option>
+                                <option value="EUCOM">EUCOM (Europe)</option>
+                                <option value="PACOM">PACOM (Pacific)</option>
+                                <option value="AFRICOM">AFRICOM (Africa)</option>
+                                <option value="CENTCOM">CENTCOM (Central)</option>
+                                <option value="SOUTHCOM">SOUTHCOM (South America)</option>
+                            </select>
+                        </div>
+                        <div class="pref-option">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="prefMarkerClustering" class="toggle-input">
+                                <span class="toggle-switch"></span>
+                                <span>Marker Clustering</span>
+                            </label>
+                            <p class="pref-description">Group nearby markers when zoomed out</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-primary" onclick="savePreferences()">
+                        <i class="fas fa-save"></i> Save Preferences
+                    </button>
+                </div>
+            </section>
+
+            <!-- Certificates Section -->
+            <section id="certificates-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-certificate"></i> PKI Certificates</h1>
+                    <p>Manage your client certificates for PKI authentication</p>
+                </div>
+
+                <div class="cert-upload-area">
+                    <i class="fas fa-upload"></i>
+                    <h3>Register New Certificate</h3>
+                    <p>Upload a client certificate to enable PKI authentication</p>
+                    <button class="btn-primary" onclick="uploadCertificate()">
+                        <i class="fas fa-plus"></i> Add Certificate
+                    </button>
+                </div>
+
+                <div id="certificatesList" class="certificates-list">
+                    <!-- Certificates will be loaded here -->
+                    <div class="empty-state">
+                        <i class="fas fa-certificate"></i>
+                        <p>No certificates registered</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Section -->
+            <section id="activity-section" class="content-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-history"></i> Activity Log</h1>
+                    <p>Review your recent account activity and login history</p>
+                </div>
+
+                <div class="activity-filters">
+                    <select class="form-select">
+                        <option>All Activity</option>
+                        <option>Logins</option>
+                        <option>Data Changes</option>
+                        <option>Settings Changes</option>
+                    </select>
+                    <input type="date" class="form-input">
+                </div>
+
+                <div id="activityLog" class="activity-timeline">
+                    <div class="activity-item">
+                        <div class="activity-icon success">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                        <div class="activity-content">
+                            <strong>Logged in</strong>
+                            <p>Authenticated via PKI certificate</p>
+                            <span class="activity-time"><i class="fas fa-clock"></i> Just now</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/modules/auth-guard.js"></script>
+    <script src="/js/profile.js"></script>
+</body>
+</html>

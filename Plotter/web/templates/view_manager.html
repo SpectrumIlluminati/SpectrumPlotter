@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SFAF Table Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/shared-nav.css">
+    <link rel="stylesheet" href="/css/view_manager.css?v=2">
+    <script src="/js/modules/auth-guard.js"></script>
+    <script>requireRole(['admin', 'ntia', 'agency', 'combatant_command', 'command', 'ism', 'operator']);</script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+            <div class="navigation-bar">
+        <div class="nav-logo">
+            <i class="fas fa-tower-broadcast"></i>
+            <span>SFAF Plotter</span>
+        </div>
+        <div class="nav-links nav-links-center">
+            <a href="/map-viewer" class="nav-link">
+                <i class="fas fa-map-marked-alt"></i><span>Map</span>
+            </a>
+            <a href="/database" class="nav-link">
+                <i class="fas fa-database"></i><span>Database</span>
+            </a>
+            <a href="/frequency" class="nav-link">
+                <i class="fas fa-broadcast-tower"></i><span>Frequencies</span>
+            </a>
+            <a href="/workbox" class="nav-link ism-nav-link" style="display:none">
+                <i class="fas fa-inbox"></i><span>Workbox</span>
+            </a>
+            <a href="/frequency-nomination" class="nav-link">
+                <i class="fas fa-wave-square"></i><span>Freq Tool</span>
+            </a>
+            <a href="/view-manager" class="nav-link active">
+                <i class="fas fa-table"></i><span>Table Manager</span>
+            </a>
+            <a href="/admin" class="nav-link admin-console-link" style="display:none">
+                <i class="fas fa-shield-halved"></i><span>Admin</span>
+            </a>
+        </div>
+        <div class="nav-links nav-links-right">
+            <a href="/profile" class="nav-link" title="Account">
+                <i class="fas fa-user-circle"></i><span>Account</span>
+            </a>
+            <button class="nav-link" onclick="handleLogout()" title="Logout"
+                    style="background:none;border:none;cursor:pointer;color:inherit;">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+            </button>
+        </div>
+    </div>
+<!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab active" data-tab="units"><i class="fas fa-users"></i> Units</button>
+            <button class="tab" data-tab="irac-notes"><i class="fas fa-sticky-note"></i> IRAC Notes</button>
+            <button class="tab" data-tab="manufacturers"><i class="fas fa-industry"></i> Manufacturers</button>
+            <button class="tab" data-tab="installations"><i class="fas fa-map-marker-alt"></i> Installations</button>
+            <button class="tab" data-tab="system-config"><i class="fas fa-cog"></i> System Config</button>
+            <button class="tab" data-tab="sfaf-codes"><i class="fas fa-list-ol"></i> SFAF Codes</button>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Units Tab -->
+            <div id="units-tab" class="tab-panel active">
+                <div class="table-manager">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <h2><i class="fas fa-users"></i> Unit Management</h2>
+                        </div>
+                        <div class="toolbar-right">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="unitsSearch" placeholder="Search units..." oninput="referenceData.filterUnits(this.value)">
+                            </div>
+                            <select id="unitsInstallationFilter" class="form-input" style="width:200px;padding:6px 10px;font-size:0.85rem;" onchange="referenceData.filterUnitsByInstallation(this.value)">
+                                <option value="">All Installations</option>
+                            </select>
+                            <button class="btn btn-warning" onclick="referenceData.cleanupOrphanedAssignments()" title="Remove frequency assignments without SFAF records" style="margin-right: 10px;">
+                                <i class="fas fa-broom"></i> Cleanup Orphaned
+                            </button>
+                            <button class="btn btn-primary" onclick="referenceData.showAddUnit()">
+                                <i class="fas fa-plus"></i> Add Unit
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Unit Designator</th>
+                                    <th>Organization</th>
+                                    <th>Location</th>
+                                    <th>Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unitsTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="5" style="text-align: center;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading units...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IRAC Notes Tab -->
+            <div id="irac-notes-tab" class="tab-panel">
+                <div class="table-manager">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <h2><i class="fas fa-sticky-note"></i> IRAC Notes Management</h2>
+                        </div>
+                        <div class="toolbar-right">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="iracSearch" placeholder="Search notes..." oninput="referenceData.filterIRACNotes(this.value)">
+                            </div>
+                            <button class="btn btn-primary" onclick="referenceData.showAddIRACNote()">
+                                <i class="fas fa-plus"></i> Add IRAC Note
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="iracNotesTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="4" style="text-align: center;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading IRAC notes...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manufacturers Tab -->
+            <div id="manufacturers-tab" class="tab-panel">
+                <div class="table-manager">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <h2><i class="fas fa-industry"></i> Equipment Manufacturers</h2>
+                            <span style="font-size:0.85em; color:#888; margin-left:12px;">MC4EB Publication 7, Change 1 - Manufacturer Codes</span>
+                        </div>
+                        <div class="toolbar-right">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="manufacturersSearch" placeholder="Search manufacturers..." oninput="referenceData.filterManufacturers(this.value)">
+                            </div>
+                            <button class="btn btn-primary" onclick="referenceData.showAddManufacturer()">
+                                <i class="fas fa-plus"></i> Add Manufacturer
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Manufacturer Name</th>
+                                    <th>Country</th>
+                                    <th>Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manufacturersTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="5" style="text-align: center;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading manufacturers...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Installations Tab -->
+            <div id="installations-tab" class="tab-panel">
+                <div class="table-manager">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <h2><i class="fas fa-map-marker-alt"></i> Installation Management</h2>
+                            <span style="font-size:0.85em; color:#888; margin-left:12px;">206 inbox routing destinations for frequency requests</span>
+                        </div>
+                        <div class="toolbar-right">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="installationsSearch" placeholder="Search installations..." oninput="referenceData.filterInstallations(this.value)">
+                            </div>
+                            <button class="btn btn-primary" onclick="referenceData.showAddInstallation()">
+                                <i class="fas fa-plus"></i> Add Installation
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Code</th>
+                                    <th>Organization</th>
+                                    <th>State</th>
+                                    <th>Country</th>
+                                    <th>Active</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="installationsTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="7" style="text-align: center;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading installations...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Config Tab -->
+            <div id="system-config-tab" class="tab-panel">
+                <div class="table-manager">
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <h2><i class="fas fa-cog"></i> System Configuration</h2>
+                        </div>
+                        <div class="toolbar-right">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="systemConfigSearch" placeholder="Search config..." oninput="referenceData.filterSystemConfig(this.value)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:220px;">Key</th>
+                                    <th style="width:200px;">Value</th>
+                                    <th>Description</th>
+                                    <th style="width:80px;">Save</th>
+                                </tr>
+                            </thead>
+                            <tbody id="systemConfigTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="4" style="text-align: center;">
+                                        <i class="fas fa-spinner fa-spin"></i> Loading configuration...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SFAF Codes Tab -->
+            <div id="sfaf-codes-tab" class="tab-panel">
+                <div class="table-manager" style="display:flex;gap:0;padding:0;">
+                    <!-- Field selector sidebar -->
+                    <div id="sfafCodesFieldNav" style="width:180px;min-width:180px;border-right:1px solid rgba(100,150,255,0.15);padding:12px 0;">
+                        <div style="padding:8px 16px;font-size:0.72rem;font-weight:600;color:#607d8b;letter-spacing:0.08em;text-transform:uppercase;">Record Metadata</div>
+                        <button class="sfaf-field-btn active" data-field="010" onclick="referenceData.selectLookupField('010')">010 — Type of Action</button>
+                        <button class="sfaf-field-btn" data-field="144" onclick="referenceData.selectLookupField('144')">144 — Approval Authority</button>
+                        <button class="sfaf-field-btn" data-field="151" onclick="referenceData.selectLookupField('151')">151 — Coord. Indicator</button>
+                        <div style="padding:8px 16px 4px;font-size:0.72rem;font-weight:600;color:#607d8b;letter-spacing:0.08em;text-transform:uppercase;margin-top:6px;">Organization</div>
+                        <button class="sfaf-field-btn" data-field="200" onclick="referenceData.selectLookupField('200')">200 — Agency</button>
+                        <button class="sfaf-field-btn" data-field="201" onclick="referenceData.selectLookupField('201')">201 — Combatant Cmd</button>
+                        <button class="sfaf-field-btn" data-field="202" onclick="referenceData.selectLookupField('202')">202 — MAJCOM</button>
+                        <button class="sfaf-field-btn" data-field="203" onclick="referenceData.selectLookupField('203')">203 — Bureau</button>
+                        <button class="sfaf-field-btn" data-field="204" onclick="referenceData.selectLookupField('204')">204 — Sub-MAJCOM</button>
+                        <button class="sfaf-field-btn" data-field="205" onclick="referenceData.selectLookupField('205')">205 — NAF / Wing</button>
+                        <button class="sfaf-field-btn" data-field="206" onclick="referenceData.selectLookupField('206')">206 — ISM Office</button>
+                        <button class="sfaf-field-btn" data-field="209" onclick="referenceData.selectLookupField('209')">209 — Area AFC</button>
+                        <div style="padding:8px 16px 4px;font-size:0.72rem;font-weight:600;color:#607d8b;letter-spacing:0.08em;text-transform:uppercase;margin-top:6px;">Location</div>
+                        <button class="sfaf-field-btn" data-field="300" onclick="referenceData.selectLookupField('300')">300 — State / Area</button>
+                        <button class="sfaf-field-btn" data-field="400" onclick="referenceData.selectLookupField('400')">400 — Country</button>
+                        <div style="padding:8px 16px 4px;font-size:0.72rem;font-weight:600;color:#607d8b;letter-spacing:0.08em;text-transform:uppercase;margin-top:6px;">Antenna</div>
+                        <button class="sfaf-field-btn" data-field="354" onclick="referenceData.selectLookupField('354')">354/454 — Antenna Name</button>
+                        <button class="sfaf-field-btn" data-field="363" onclick="referenceData.selectLookupField('363')">363/463 — Polarization</button>
+                        <div style="padding:8px 16px 4px;font-size:0.72rem;font-weight:600;color:#607d8b;letter-spacing:0.08em;text-transform:uppercase;margin-top:6px;">Assignment</div>
+                        <button class="sfaf-field-btn" data-field="704" onclick="referenceData.selectLookupField('704')">704 — Type of Service</button>
+                        <button class="sfaf-field-btn" data-field="716" onclick="referenceData.selectLookupField('716')">716 — Usage Code</button>
+                    </div>
+
+                    <!-- Table area -->
+                    <div style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+                        <div class="toolbar">
+                            <div class="toolbar-left">
+                                <h2 id="sfafCodesTitle"><i class="fas fa-list-ol"></i> Field 010 — Type of Action</h2>
+                            </div>
+                            <div class="toolbar-right">
+                                <div class="search-box">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" id="sfafCodesSearch" placeholder="Search..." oninput="referenceData.filterLookup(this.value)">
+                                </div>
+                                <button class="btn btn-primary" onclick="referenceData.showAddLookup()">
+                                    <i class="fas fa-plus"></i> Add Entry
+                                </button>
+                            </div>
+                        </div>
+                        <div class="data-table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Value</th>
+                                        <th>Label / Description</th>
+                                        <th style="width:70px;">Order</th>
+                                        <th style="width:80px;">Status</th>
+                                        <th style="width:80px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sfafCodesTableBody">
+                                    <tr class="loading-row">
+                                        <td colspan="5" style="text-align:center;">
+                                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- SFAF Lookup Edit Modal -->
+        <div id="sfafLookupModal" class="modal" style="display:none;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3 id="sfafLookupModalTitle"><i class="fas fa-list-ol"></i> Add Entry</h3>
+                    <button class="modal-close" onclick="referenceData.closeLookupModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="sfafLookupForm">
+                        <input type="hidden" id="sfafLookupId">
+                        <input type="hidden" id="sfafLookupFieldCode">
+
+                        <div class="form-group">
+                            <label for="sfafLookupValue">Value <span class="required">*</span></label>
+                            <input type="text" id="sfafLookupValue" class="form-input" required maxlength="100"
+                                placeholder="e.g., USAF, TX, US">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sfafLookupLabel">Label / Description</label>
+                            <input type="text" id="sfafLookupLabel" class="form-input" maxlength="200"
+                                placeholder="e.g., US Air Force, Texas, United States">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sfafLookupSortOrder">Sort Order</label>
+                            <input type="number" id="sfafLookupSortOrder" class="form-input" value="0" min="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="sfafLookupIsActive" checked>
+                                Active
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="referenceData.closeLookupModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="referenceData.saveLookup()">
+                        <i class="fas fa-save"></i> Save Entry
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unit Edit Modal -->
+        <div id="unitModal" class="modal" style="display: none;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3 id="unitModalTitle"><i class="fas fa-users"></i> Add Unit</h3>
+                    <button class="modal-close" onclick="referenceData.closeUnitModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="unitForm">
+                        <input type="hidden" id="unitId">
+
+                        <div class="form-group">
+                            <label for="unitCode">Unit Designator <span class="required">*</span></label>
+                            <input type="text" id="unitCode" class="form-input" required placeholder="e.g., 23STS, 1SOCS, 552ACW">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="unitOrganization">Organization</label>
+                            <select id="unitOrganization" class="form-input">
+                                <option value="">Select Organization...</option>
+                                <option value="Army">Army</option>
+                                <option value="Navy">Navy</option>
+                                <option value="Air Force">Air Force</option>
+                                <option value="Marines">Marines</option>
+                                <option value="Space Force">Space Force</option>
+                                <option value="Coast Guard">Coast Guard</option>
+                                <option value="Joint">Joint</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="unitInstallation">Installation (206 Inbox)</label>
+                            <select id="unitInstallation" class="form-input">
+                                <option value="">— Select Installation —</option>
+                            </select>
+                            <small style="color:#888;">Units will only appear for users who select this installation</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="unitLocation">Location</label>
+                            <input type="text" id="unitLocation" class="form-input" placeholder="e.g., Fort Bragg, NC">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="commanderName">Commander Name</label>
+                            <input type="text" id="commanderName" class="form-input" placeholder="e.g., COL John Smith">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="commanderEmail">Commander Email</label>
+                            <input type="email" id="commanderEmail" class="form-input" placeholder="commander@mil.army">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="commPocName">Communications POC Name</label>
+                            <input type="text" id="commPocName" class="form-input" placeholder="Communications Officer">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="commPocEmail">Communications POC Email</label>
+                            <input type="email" id="commPocEmail" class="form-input">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="commPocPhone">Communications POC Phone</label>
+                            <input type="tel" id="commPocPhone" class="form-input" placeholder="(555) 123-4567">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="unitIsActive" checked>
+                                Active
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="referenceData.closeUnitModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="referenceData.saveUnit()">
+                        <i class="fas fa-save"></i> Save Unit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- IRAC Note Edit Modal -->
+        <div id="iracNoteModal" class="modal" style="display: none;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3 id="iracNoteModalTitle"><i class="fas fa-sticky-note"></i> Add IRAC Note</h3>
+                    <button class="modal-close" onclick="referenceData.closeIRACNoteModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="iracNoteForm">
+                        <input type="hidden" id="iracNoteId">
+
+                        <div class="form-group">
+                            <label for="iracNoteNumber">Code <span class="required">*</span></label>
+                            <input type="text" id="iracNoteNumber" class="form-input" required placeholder="e.g., IRAC-001">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="iracCategory">Category</label>
+                            <select id="iracCategory" class="form-input">
+                                <option value="">Select Category...</option>
+                                <option value="frequency">Frequency</option>
+                                <option value="coordination">Coordination</option>
+                                <option value="technical">Technical</option>
+                                <option value="administrative">Administrative</option>
+                                <option value="operational">Operational</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="iracNoteText">Description <span class="required">*</span></label>
+                            <textarea id="iracNoteText" class="form-input" rows="4" required placeholder="Enter IRAC note description..."></textarea>
+                        </div>
+
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="referenceData.closeIRACNoteModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="referenceData.saveIRACNote()">
+                        <i class="fas fa-save"></i> Save IRAC Note
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unit Frequencies Modal -->
+        <div id="unitFrequenciesModal" class="modal" style="display: none;">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-header">
+                    <h3 id="unitFrequenciesTitle"><i class="fas fa-broadcast-tower"></i> Unit Frequencies</h3>
+                    <button class="modal-close" onclick="referenceData.closeFrequenciesModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Serial</th>
+                                <th>Frequency</th>
+                                <th>Emission</th>
+                                <th>Power</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="unitFrequenciesTableBody">
+                            <!-- Frequencies will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-info" onclick="referenceData.refreshFrequenciesModal()" title="Refresh frequencies from database">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="referenceData.viewUnitInDatabase()">
+                        <i class="fas fa-database"></i> View in Database
+                    </button>
+                    <button class="btn btn-secondary" onclick="referenceData.closeFrequenciesModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manufacturer Edit Modal -->
+    <div id="manufacturerModal" class="modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="manufacturerModalTitle"><i class="fas fa-industry"></i> Add Manufacturer</h3>
+                <button class="modal-close" onclick="referenceData.closeManufacturerModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="manufacturerForm">
+                    <input type="hidden" id="manufacturerId">
+
+                    <div class="form-group">
+                        <label for="manufacturerCode">Code <span class="required">*</span></label>
+                        <input type="text" id="manufacturerCode" class="form-input" required maxlength="10"
+                            placeholder="e.g., HAR, MOT, THA" style="text-transform:uppercase;">
+                        <small style="color:#888;">Short manufacturer code per MC4EB Pub 7 (up to 10 characters)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="manufacturerName">Manufacturer Name <span class="required">*</span></label>
+                        <input type="text" id="manufacturerName" class="form-input" required maxlength="255"
+                            placeholder="e.g., Harris Corporation (L3Harris)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="manufacturerCountry">Country</label>
+                        <input type="text" id="manufacturerCountry" class="form-input" maxlength="100"
+                            placeholder="e.g., USA, Germany, Japan">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="manufacturerIsActive" checked>
+                            Active
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="referenceData.closeManufacturerModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="referenceData.saveManufacturer()">
+                    <i class="fas fa-save"></i> Save Manufacturer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Installation Edit Modal -->
+    <div id="installationModal" class="modal" style="display: none;">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="installationModalTitle"><i class="fas fa-map-marker-alt"></i> Add Installation</h3>
+                <button class="modal-close" onclick="referenceData.closeInstallationModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="installationForm">
+                    <input type="hidden" id="installationId">
+
+                    <div class="form-group">
+                        <label for="installationName">Installation Name <span class="required">*</span></label>
+                        <input type="text" id="installationName" class="form-input" required placeholder="e.g., Hurlburt Field, Eglin AFB">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="installationCode">Code / Short Name</label>
+                        <input type="text" id="installationCode" class="form-input" placeholder="e.g., HURLBURT, EGLIN" maxlength="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="installationOrganization">Organization</label>
+                        <select id="installationOrganization" class="form-input">
+                            <option value="">Select Organization...</option>
+                            <option value="Army">Army</option>
+                            <option value="Navy">Navy</option>
+                            <option value="Air Force">Air Force</option>
+                            <option value="Marines">Marines</option>
+                            <option value="Space Force">Space Force</option>
+                            <option value="Coast Guard">Coast Guard</option>
+                            <option value="Joint">Joint</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="form-group">
+                            <label for="installationState">State</label>
+                            <input type="text" id="installationState" class="form-input" placeholder="e.g., FL, CA">
+                        </div>
+                        <div class="form-group">
+                            <label for="installationCountry">Country</label>
+                            <input type="text" id="installationCountry" class="form-input" placeholder="USA" value="USA">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="installationIsActive" checked>
+                            Active
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="referenceData.closeInstallationModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="referenceData.saveInstallation()">
+                    <i class="fas fa-save"></i> Save Installation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/reference_data.js"></script>
+</body>
+</html>
