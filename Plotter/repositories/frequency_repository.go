@@ -983,3 +983,38 @@ func (r *FrequencyRepository) GetRequestCoordinations(requestID uuid.UUID) ([]st
 		requestID)
 	return workboxes, err
 }
+
+// PublicUnit is a minimal projection used by the public account-request dropdown.
+type PublicUnit struct {
+	ID           string `json:"id" db:"id"`
+	Name         string `json:"name" db:"name"`
+	UnitCode     string `json:"unit_code" db:"unit_code"`
+	Organization string `json:"organization" db:"organization"`
+}
+
+// GetPublicUnits returns id, name, unit_code, and organization for all active units.
+// If installationID is non-empty the results are filtered to that installation.
+// Intended for unauthenticated dropdowns.
+func (r *FrequencyRepository) GetPublicUnits(installationID string) ([]PublicUnit, error) {
+	var units []PublicUnit
+	var err error
+	if installationID != "" {
+		err = r.db.Select(&units, `
+			SELECT id::text, name, unit_code,
+			       COALESCE(organization, '') AS organization
+			FROM units
+			WHERE is_active = true AND installation_id = $1
+			ORDER BY name`, installationID)
+	} else {
+		err = r.db.Select(&units, `
+			SELECT id::text, name, unit_code,
+			       COALESCE(organization, '') AS organization
+			FROM units
+			WHERE is_active = true
+			ORDER BY name`)
+	}
+	if units == nil {
+		units = []PublicUnit{}
+	}
+	return units, err
+}

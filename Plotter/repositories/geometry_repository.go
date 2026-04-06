@@ -62,13 +62,13 @@ func (r *GeometryRepository) Create(geometry *models.Geometry) error {
 	// CORRECTED: Use actual database schema
 	query := `
         INSERT INTO geometries (
-            id, marker_id, type, coordinates, properties,
+            id, marker_id, type, color, coordinates, properties,
             created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)`
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 	_, err = r.db.Exec(query,
-		geometry.ID, geometry.MarkerID, geometry.Type,
+		geometry.ID, geometry.MarkerID, geometry.Type, geometry.Color,
 		coordinatesJSON, propertiesJSON,
 		geometry.CreatedAt, geometry.UpdatedAt)
 
@@ -106,12 +106,12 @@ func (r *GeometryRepository) Update(geometry *models.Geometry) error {
 	}
 
 	query := `
-        UPDATE geometries 
-        SET type = $2, coordinates = $3, properties = $4, updated_at = $5
+        UPDATE geometries
+        SET type = $2, color = $3, coordinates = $4, properties = $5, updated_at = $6
         WHERE id = $1`
 
 	result, err := r.db.Exec(query,
-		geometry.ID, geometry.Type, coordinatesJSON, propertiesJSON, geometry.UpdatedAt)
+		geometry.ID, geometry.Type, geometry.Color, coordinatesJSON, propertiesJSON, geometry.UpdatedAt)
 
 	if err != nil {
 		return fmt.Errorf("failed to update geometry in database: %w", err)
@@ -140,12 +140,12 @@ func (r *GeometryRepository) GetByID(id string) (*models.Geometry, error) {
 
 	// FIXED: Include marker_id in SELECT statement
 	query := `
-        SELECT id, marker_id, type, coordinates, properties, created_at, updated_at
-        FROM geometries 
+        SELECT id, marker_id, type, color, coordinates, properties, created_at, updated_at
+        FROM geometries
         WHERE id = $1`
 
 	err = r.db.QueryRow(query, geometryID).Scan(
-		&geometry.ID, &geometry.MarkerID, &geometry.Type, // INCLUDE MarkerID
+		&geometry.ID, &geometry.MarkerID, &geometry.Type, &geometry.Color,
 		&coordinatesJSON, &propertiesJSON,
 		&geometry.CreatedAt, &geometry.UpdatedAt)
 
@@ -163,7 +163,7 @@ func (r *GeometryRepository) GetByID(id string) (*models.Geometry, error) {
 
 func (r *GeometryRepository) GetAll() ([]*models.Geometry, error) {
 	query := `
-        SELECT id, marker_id, type, coordinates, properties,
+        SELECT id, marker_id, type, color, coordinates, properties,
                created_at, updated_at
         FROM geometries
         ORDER BY created_at DESC`
@@ -180,7 +180,7 @@ func (r *GeometryRepository) GetAll() ([]*models.Geometry, error) {
 		var coordinatesJSON, propertiesJSON []byte
 
 		err := rows.Scan(
-			&geometry.ID, &geometry.MarkerID, &geometry.Type,
+			&geometry.ID, &geometry.MarkerID, &geometry.Type, &geometry.Color,
 			&coordinatesJSON, &propertiesJSON,
 			&geometry.CreatedAt, &geometry.UpdatedAt)
 
@@ -232,7 +232,7 @@ func (r *GeometryRepository) GetAll() ([]*models.Geometry, error) {
 
 func (r *GeometryRepository) GetByType(geometryType models.GeometryType) ([]*models.Geometry, error) {
 	query := `
-        SELECT id, marker_id, type, coordinates, properties,
+        SELECT id, marker_id, type, color, coordinates, properties,
                created_at, updated_at
         FROM geometries
         WHERE type = $1
@@ -250,7 +250,7 @@ func (r *GeometryRepository) GetByType(geometryType models.GeometryType) ([]*mod
 		var coordinatesJSON, propertiesJSON []byte
 
 		err := rows.Scan(
-			&geometry.ID, &geometry.MarkerID, &geometry.Type,
+			&geometry.ID, &geometry.MarkerID, &geometry.Type, &geometry.Color,
 			&coordinatesJSON, &propertiesJSON,
 			&geometry.CreatedAt, &geometry.UpdatedAt)
 
@@ -338,7 +338,7 @@ func (r *GeometryRepository) DeleteAll() error {
 
 func (r *GeometryRepository) GetByMarkerID(markerID string) ([]*models.Geometry, error) {
 	query := `
-        SELECT id, marker_id, type, coordinates, properties,
+        SELECT id, marker_id, type, color, coordinates, properties,
                created_at, updated_at
         FROM geometries
         WHERE marker_id = $1
@@ -356,7 +356,7 @@ func (r *GeometryRepository) GetByMarkerID(markerID string) ([]*models.Geometry,
 		var coordinatesJSON, propertiesJSON []byte
 
 		err := rows.Scan(
-			&geometry.ID, &geometry.MarkerID, &geometry.Type,
+			&geometry.ID, &geometry.MarkerID, &geometry.Type, &geometry.Color,
 			&coordinatesJSON, &propertiesJSON,
 			&geometry.CreatedAt, &geometry.UpdatedAt)
 

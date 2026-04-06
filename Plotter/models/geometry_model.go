@@ -17,16 +17,19 @@ const (
 
 type Geometry struct {
 	ID        uuid.UUID    `json:"id" db:"id"`
-	MarkerID  uuid.UUID    `json:"marker_id" db:"marker_id"` // MISSING FIELD - ADD THIS
+	MarkerID  uuid.UUID    `json:"marker_id" db:"marker_id"`
 	Type      GeometryType `json:"type" db:"type"`
-	Serial    string       `json:"serial" db:"serial"`
+	// Color is stored in the geometries table (migration 055) and used by
+	// Leaflet to render circles/polygons.  Serial was removed from the DB
+	// in migration 019 and is no longer persisted.
 	Color     string       `json:"color" db:"color"`
 	CreatedAt time.Time    `json:"created_at" db:"created_at"`
 	UpdatedAt time.Time    `json:"updated_at" db:"updated_at"`
 
-	// Center marker coordinates
-	Latitude  float64 `json:"lat" db:"latitude"`
-	Longitude float64 `json:"lng" db:"longitude"`
+	// Latitude and Longitude are deserialized from the coordinates JSONB
+	// column by the repository — they have no direct db: column mapping.
+	Latitude  float64 `json:"lat"`
+	Longitude float64 `json:"lng"`
 
 	// Type-specific properties
 	CircleProps    *CircleGeometry    `json:"circle_properties,omitempty"`

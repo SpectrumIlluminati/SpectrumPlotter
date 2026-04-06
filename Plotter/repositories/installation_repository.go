@@ -62,3 +62,28 @@ func (r *InstallationRepository) Delete(id uuid.UUID) error {
 	_, err := r.db.Exec(`DELETE FROM installations WHERE id = $1`, id)
 	return err
 }
+
+// PublicInstallation is a minimal projection used by the public account-request dropdown.
+type PublicInstallation struct {
+	ID           string `json:"id" db:"id"`
+	Name         string `json:"name" db:"name"`
+	Code         string `json:"code" db:"code"`
+	Organization string `json:"organization" db:"organization"`
+}
+
+// GetPublicInstallations returns the id, name, code, and organization of every
+// active installation, ordered by name.  Intended for unauthenticated dropdowns.
+func (r *InstallationRepository) GetPublicInstallations() ([]PublicInstallation, error) {
+	var list []PublicInstallation
+	err := r.db.Select(&list, `
+		SELECT id::text, name,
+		       COALESCE(code, '')         AS code,
+		       COALESCE(organization, '') AS organization
+		FROM installations
+		WHERE is_active = true
+		ORDER BY name`)
+	if list == nil {
+		list = []PublicInstallation{}
+	}
+	return list, err
+}

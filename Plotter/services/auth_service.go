@@ -73,8 +73,8 @@ func (s *AuthService) AuthenticatePassword(username, password, ipAddress, userAg
 		UserID:       user.ID,
 		Token:        token,
 		AuthMethod:   "password",
-		IPAddress:    ipAddress,
-		UserAgent:    userAgent,
+		IPAddress:    &ipAddress,
+		UserAgent:    &userAgent,
 		ExpiresAt:    time.Now().Add(24 * time.Hour), // 24 hour session
 		LastActivity: time.Now(),
 		CreatedAt:    time.Now(),
@@ -128,13 +128,14 @@ func (s *AuthService) ValidateSession(token string) (*models.User, error) {
 	return user, nil
 }
 
-// Logout invalidates a session
+// Logout invalidates a session. Idempotent — if the session has already
+// been deleted or expired, the call is treated as a success.
 func (s *AuthService) Logout(token string) error {
 	session, err := s.sessionRepo.GetByToken(token)
 	if err != nil {
-		return fmt.Errorf("session not found")
+		// Session not found means it's already gone — that's fine.
+		return nil
 	}
-
 	return s.sessionRepo.DeleteSession(session.ID)
 }
 

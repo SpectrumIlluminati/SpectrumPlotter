@@ -56,8 +56,8 @@ type Session struct {
 	UserID          uuid.UUID  `json:"user_id" db:"user_id"`
 	Token           string     `json:"token" db:"token"`
 	AuthMethod      string     `json:"auth_method" db:"auth_method"` // pki, password, api_key
-	IPAddress       string     `json:"ip_address" db:"ip_address"`
-	UserAgent       string     `json:"user_agent" db:"user_agent"`
+	IPAddress       *string    `json:"ip_address" db:"ip_address"` // nullable in DB
+	UserAgent       *string    `json:"user_agent" db:"user_agent"` // nullable in DB
 	ExpiresAt       time.Time  `json:"expires_at" db:"expires_at"`
 	LastActivity    time.Time  `json:"last_activity" db:"last_activity"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
@@ -68,10 +68,10 @@ type AuditLog struct {
 	ID          uuid.UUID              `json:"id" db:"id"`
 	UserID      *uuid.UUID             `json:"user_id,omitempty" db:"user_id"`
 	Action      string                 `json:"action" db:"action"`
-	Resource    string                 `json:"resource" db:"resource"`
+	Resource    *string                `json:"resource,omitempty" db:"resource"` // nullable in DB
 	Result      string                 `json:"result" db:"result"` // success, failure, denied
-	IPAddress   string                 `json:"ip_address" db:"ip_address"`
-	UserAgent   string                 `json:"user_agent" db:"user_agent"`
+	IPAddress   *string                `json:"ip_address" db:"ip_address"` // nullable in DB
+	UserAgent   *string                `json:"user_agent" db:"user_agent"` // nullable in DB
 	Details     map[string]interface{} `json:"details,omitempty"`
 	CreatedAt   time.Time              `json:"created_at" db:"created_at"`
 }

@@ -77,7 +77,6 @@ func (gs *GeometryService) CreateCircle(req models.CreateCircleRequest) (*models
 		ID:          uuid.New(),
 		MarkerID:    markerResponse.Marker.ID, // SET THE MARKER ID
 		Type:        models.GeometryTypeCircle,
-		Serial:      gs.serialService.GenerateSerial(),
 		Color:       req.Color,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
@@ -136,7 +135,6 @@ func (gs *GeometryService) CreatePolygon(req models.CreatePolygonRequest) (*mode
 		ID:        uuid.New(),
 		MarkerID:  markerResponse.Marker.ID, // FIXED: Set the MarkerID
 		Type:      models.GeometryTypePolygon,
-		Serial:    gs.serialService.GenerateSerial(),
 		Color:     req.Color,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
@@ -193,7 +191,6 @@ func (gs *GeometryService) CreateRectangle(req models.CreateRectangleRequest) (*
 		ID:        uuid.New(),
 		MarkerID:  markerResponse.Marker.ID, // IMPORTANT: Set the MarkerID
 		Type:      models.GeometryTypeRectangle,
-		Serial:    gs.serialService.GenerateSerial(),
 		Color:     req.Color,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
