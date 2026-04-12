@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Frequencies - SFAF Plotter</title>
+    <link rel="stylesheet" href="/css/db_viewer.css">
+    <link rel="stylesheet" href="/css/frequency.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/js/modules/auth-guard.js"></script>
+    <style>
+        /* Tab Navigation */
+        .page-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid rgba(100, 150, 255, 0.2);
+            background: rgba(10, 10, 25, 0.6);
+            padding: 0 20px;
+            overflow-x: auto;
+        }
+        .page-tab {
+            padding: 14px 20px;
+            cursor: pointer;
+            color: #9e9e9e;
+            font-size: 0.92em;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            white-space: nowrap;
+        }
+        .page-tab:hover { color: #e0e0e0; }
+        .page-tab.active {
+            color: #64b5f6;
+            border-bottom-color: #64b5f6;
+        }
+        .page-tab .tab-badge {
+            background: rgba(100, 181, 246, 0.2);
+            color: #64b5f6;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .page-tab .tab-badge.warning {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ffa726;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* Subtab bar (Assigned / Pending) */
+        .subtab-bar {
+            display: flex; gap: 0;
+            border-bottom: 1px solid rgba(100,150,255,0.15);
+            background: rgba(10,10,22,0.5);
+            padding: 0 20px;
+        }
+        .subtab {
+            padding: 10px 18px; cursor: pointer;
+            color: #6b7280; font-size: 0.84em; font-weight: 500;
+            border-bottom: 2px solid transparent; margin-bottom: -1px;
+            display: flex; align-items: center; gap: 7px;
+            background: none; border-top: none; border-left: none; border-right: none;
+            transition: color 0.2s, border-color 0.2s; white-space: nowrap;
+        }
+        .subtab:hover { color: #c0c0c0; }
+        .subtab.active { color: #64b5f6; border-bottom-color: #64b5f6; }
+        .subtab .tab-badge {
+            background: rgba(100,181,246,0.18); color: #64b5f6;
+            border-radius: 10px; padding: 1px 7px; font-size: 0.8em; font-weight: 600;
+        }
+        .subtab .tab-badge.pending-badge {
+            background: rgba(251,191,36,0.15); color: #fbbf24;
+        }
+        .subpanel { display: none; }
+        .subpanel.active { display: block; }
+
+        /* Template Cards */
+        .templates-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+        .template-card {
+            background: rgba(15, 15, 35, 0.6);
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        .template-card:hover {
+            border-color: rgba(100, 181, 246, 0.5);
+            background: rgba(20, 20, 50, 0.7);
+        }
+        .template-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        .template-card-name {
+            font-weight: 600;
+            color: #64b5f6;
+            font-size: 1.05em;
+        }
+        .template-card-actions { display: flex; gap: 6px; }
+        .template-fields { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+        .template-field {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.88em;
+        }
+        .template-field-label { color: #9e9e9e; }
+        .template-field-value { color: #e0e0e0; font-family: monospace; }
+        .template-add-card {
+            border: 2px dashed rgba(100, 150, 255, 0.25);
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            min-height: 150px;
+            color: #9e9e9e;
+            transition: all 0.2s;
+        }
+        .template-add-card:hover {
+            border-color: rgba(100, 181, 246, 0.5);
+            color: #64b5f6;
+        }
+        .template-add-card i { font-size: 2em; }
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <h1><i class="fas fa-broadcast-tower"></i> My Frequencies</h1>
+        </div>
+        <nav class="topbar-nav">
+            <a href="/map-viewer" class="nav-link">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>Map Viewer</span>
+            </a>
+            <a href="/database" class="nav-link">
+                <i class="fas fa-database"></i>
+                <span>Database</span>
+            </a>
+            <a href="/frequency" class="nav-link active">
+                <i class="fas fa-broadcast-tower"></i>
+                <span>Frequencies</span>
+            </a>
+            <a href="/workbox" class="nav-link ism-nav-link" style="display:none">
+                <i class="fas fa-inbox"></i>
+                <span>Workbox</span>
+            </a>
+            <a href="/frequency-nomination" class="nav-link">
+                <i class="fas fa-wave-square"></i>
+                <span>Freq Tool</span>
+            </a>
+            <a href="/view-manager" class="nav-link">
+                <i class="fas fa-cog"></i>
+                <span>Table Manager</span>
+            </a>
+        </nav>
+        <div class="topbar-right">
+            <button id="refreshBtn" class="btn btn-icon" title="Refresh"><i class="fas fa-sync"></i></button>
+            <button id="exportBtn" class="btn btn-icon" title="Export Assignments"><i class="fas fa-download"></i></button>
+            <a href="/admin" class="btn btn-icon admin-console-link" title="Admin Console" style="display:none">
+                <i class="fas fa-shield-halved"></i>
+            </a>
+            <a href="/profile" class="btn btn-icon" title="User Account">
+                <i class="fas fa-user-circle"></i>
+            </a>
+            <button class="btn btn-icon" title="Logout" onclick="handleLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+            <span id="sessionInfo" class="session-badge"></span>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat">
+            <span class="stat-value" id="totalUnits">0</span>
+            <span class="stat-label">Units</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="totalAssignments">0</span>
+            <span class="stat-label">Assignments</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="statPermCount">0</span>
+            <span class="stat-label">Permanent</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="statTempCount">0</span>
+            <span class="stat-label">Temporary</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="expiringCount">0</span>
+            <span class="stat-label">Expiring Soon</span>
+        </div>
+        <div class="stat">
+            <span class="stat-value" id="pendingRequests">0</span>
+            <span class="stat-label">Pending Requests</span>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="page-tabs">
+        <button class="page-tab active" data-tab="permanent">
+            <i class="fas fa-infinity"></i> Permanent Assignments
+            <span class="tab-badge" id="tabBadgePermanent">0</span>
+        </button>
+        <button class="page-tab" data-tab="temporary">
+            <i class="fas fa-clock"></i> Temporary Assignments
+            <span class="tab-badge" id="tabBadgeTemporary">0</span>
+        </button>
+<button class="page-tab" data-tab="drafts">
+            <i class="fas fa-file-alt"></i> Drafts
+            <span class="tab-badge" id="tabBadgeDrafts">0</span>
+        </button>
+        <button class="page-tab" data-tab="pending-review">
+            <i class="fas fa-clipboard-check"></i> Pending Reviews
+            <span class="tab-badge warning" id="tabBadgePending">0</span>
+        </button>
+        <button class="page-tab" data-tab="templates">
+            <i class="fas fa-layer-group"></i> Templates
+            <span class="tab-badge" id="tabBadgeTemplates">0</span>
+        </button>
+    </div>
+
+    <!-- ══════════════ PERMANENT ASSIGNMENTS TAB ══════════════ -->
+    <div id="permanent-tab" class="tab-panel active">
+        <div class="subtab-bar">
+            <button class="subtab active" data-subtab="perm-assigned" onclick="switchSubtab('permanent', 'assigned', this)">
+                <i class="fas fa-check-circle"></i> Assigned
+                <span class="tab-badge" id="subtabBadgePermAssigned">0</span>
+            </button>
+            <button class="subtab" data-subtab="perm-pending" onclick="switchSubtab('permanent', 'pending', this)">
+                <i class="fas fa-hourglass-half"></i> Pending
+                <span class="tab-badge pending-badge" id="subtabBadgePermPending">0</span>
+            </button>
+        </div>
+
+        <!-- Assigned subpanel -->
+        <div id="perm-assigned-subpanel" class="subpanel active">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="permSearch" placeholder="Search permanent assignments...">
+                    </div>
+                    <select id="permUnitFilter" class="select">
+                        <option value="">All Units</option>
+                    </select>
+                    <select id="permTypeFilter" class="select">
+                        <option value="">All Types</option>
+                        <option value="primary">Primary</option>
+                        <option value="alternate">Alternate</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="tactical">Tactical</option>
+                    </select>
+                </div>
+                <div class="toolbar-right">
+                    <a href="/frequency/request" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Request Frequency
+                    </a>
+                </div>
+            </div>
+            <div id="permanentContainer" class="units-container">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading permanent assignments...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending subpanel -->
+        <div id="perm-pending-subpanel" class="subpanel">
+            <div id="permPendingContainer" class="requests-container">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading pending requests...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ TEMPORARY ASSIGNMENTS TAB ══════════════ -->
+    <div id="temporary-tab" class="tab-panel">
+        <div class="subtab-bar">
+            <button class="subtab active" data-subtab="temp-assigned" onclick="switchSubtab('temporary', 'assigned', this)">
+                <i class="fas fa-check-circle"></i> Assigned
+                <span class="tab-badge" id="subtabBadgeTempAssigned">0</span>
+            </button>
+            <button class="subtab" data-subtab="temp-pending" onclick="switchSubtab('temporary', 'pending', this)">
+                <i class="fas fa-hourglass-half"></i> Pending
+                <span class="tab-badge pending-badge" id="subtabBadgeTempPending">0</span>
+            </button>
+        </div>
+
+        <!-- Assigned subpanel -->
+        <div id="temp-assigned-subpanel" class="subpanel active">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="tempSearch" placeholder="Search temporary assignments...">
+                    </div>
+                    <select id="tempUnitFilter" class="select">
+                        <option value="">All Units</option>
+                    </select>
+                    <select id="tempTypeFilter" class="select">
+                        <option value="">All Types</option>
+                        <option value="primary">Primary</option>
+                        <option value="alternate">Alternate</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="tactical">Tactical</option>
+                    </select>
+                    <select id="tempExpiryFilter" class="select">
+                        <option value="">All Status</option>
+                        <option value="expiring">Expiring (30 days)</option>
+                        <option value="valid">Valid</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                </div>
+                <div class="toolbar-right">
+                    <a href="/frequency/request" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Request Frequency
+                    </a>
+                </div>
+            </div>
+            <div id="temporaryContainer" class="units-container">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading temporary assignments...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending subpanel -->
+        <div id="temp-pending-subpanel" class="subpanel">
+            <div id="tempPendingContainer" class="requests-container">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading pending requests...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ══════════════ DRAFTS TAB ══════════════ -->
+    <div id="drafts-tab" class="tab-panel">
+        <div id="draftsContainer" class="requests-container"></div>
+    </div>
+
+    <!-- ══════════════ PENDING REVIEWS TAB ══════════════ -->
+    <div id="pending-review-tab" class="tab-panel">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="pendingSearch" placeholder="Search pending requests...">
+                </div>
+                <select id="pendingPurposeFilter" class="select">
+                    <option value="">All Purposes</option>
+                    <option value="real_world">Real World</option>
+                    <option value="exercise">Exercise</option>
+                    <option value="routine">Routine</option>
+                </select>
+            </div>
+        </div>
+        <div id="pendingContainer" class="requests-container">
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading pending requests...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════ TEMPLATES TAB ══════════════ -->
+    <div id="templates-tab" class="tab-panel">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="templateSearch" placeholder="Search templates...">
+                </div>
+            </div>
+            <div class="toolbar-right">
+                <button class="btn btn-primary" onclick="openTemplateModal()">
+                    <i class="fas fa-plus"></i> New Template
+                </button>
+            </div>
+        </div>
+        <div class="templates-container">
+            <div id="templatesGrid" class="templates-grid"></div>
+        </div>
+    </div>
+
+</div><!-- /.app -->
+
+<!-- ════════════════ MODALS ════════════════ -->
+
+<!-- Assignment Details Modal -->
+<div id="assignmentModal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2><i class="fas fa-broadcast-tower"></i> Assignment Details</h2>
+            <button class="modal-close" onclick="document.getElementById('assignmentModal').style.display='none'">&times;</button>
+        </div>
+        <div class="modal-body" id="assignmentDetails"></div>
+        <div class="modal-footer">
+            <button class="btn" onclick="document.getElementById('assignmentModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Request Details Modal -->
+<div id="requestModal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2><i class="fas fa-clipboard-list"></i> Request Details</h2>
+            <button class="modal-close" onclick="document.getElementById('requestModal').style.display='none'">&times;</button>
+        </div>
+        <div class="modal-body" id="requestDetails"></div>
+        <div class="modal-footer" id="requestActions">
+            <button class="btn" onclick="document.getElementById('requestModal').style.display='none'">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Review Modal (ISM / Admin) -->
+<div id="reviewModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-clipboard-check"></i> Review Request</h2>
+            <button class="modal-close" onclick="document.getElementById('reviewModal').style.display='none'">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="reviewStatus">Status <span class="required">*</span></label>
+                <select id="reviewStatus" class="form-control">
+                    <option value="under_review">Under Review</option>
+                    <option value="approved">Approved</option>
+                    <option value="denied">Denied</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="reviewNotes">Review Notes</label>
+                <textarea id="reviewNotes" class="form-control" rows="4" placeholder="Enter review notes..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="document.getElementById('reviewModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="submitReview()">Submit Review</button>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Modal (Admin) -->
+<div id="approvalModal" class="modal" style="display: none;">
+    <div class="modal-content modal-large">
+        <div class="modal-header">
+            <h2><i class="fas fa-check-circle"></i> Approve Request &amp; Create Assignment</h2>
+            <button class="modal-close" onclick="document.getElementById('approvalModal').style.display='none'">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Approving this request will create a frequency assignment for the unit.
+            </div>
+            <input type="hidden" id="approvalRequestId">
+            <div class="form-group">
+                <label for="approvalFrequency">Frequency <span class="required">*</span></label>
+                <input type="text" id="approvalFrequency" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="approvalFrequencyMhz">Frequency (MHz) <span class="required">*</span></label>
+                <input type="number" step="0.001" id="approvalFrequencyMhz" class="form-control" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="approvalAssignmentDate">Assignment Date <span class="required">*</span></label>
+                    <input type="date" id="approvalAssignmentDate" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="approvalExpirationDate">Expiration Date</label>
+                    <input type="date" id="approvalExpirationDate" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="approvalAuthority">Assignment Authority</label>
+                <input type="text" id="approvalAuthority" class="form-control" placeholder="NTIA, Local Frequency Manager, etc.">
+            </div>
+            <div class="form-group">
+                <label for="approvalAuthNumber">Authorization Number</label>
+                <input type="text" id="approvalAuthNumber" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="approvalNotes">Approval Notes</label>
+                <textarea id="approvalNotes" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="document.getElementById('approvalModal').style.display='none'">Cancel</button>
+            <button class="btn btn-success" onclick="submitApproval()">
+                <i class="fas fa-check"></i> Approve &amp; Create Assignment
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Template Save/Edit Modal -->
+<div id="templateModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-layer-group"></i> <span id="templateModalTitle">New Template</span></h2>
+            <button class="modal-close" onclick="document.getElementById('templateModal').style.display='none'">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="tplName">Template Name <span class="required">*</span></label>
+                <input type="text" id="tplName" class="form-control" placeholder="e.g. Infantry Net Primary">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tplFrequency">Frequency</label>
+                    <input type="text" id="tplFrequency" class="form-control" placeholder="e.g. 35.200 MHz">
+                </div>
+                <div class="form-group">
+                    <label for="tplAssignmentType">Assignment Type</label>
+                    <select id="tplAssignmentType" class="form-control">
+                        <option value="">Select...</option>
+                        <option value="primary">Primary</option>
+                        <option value="alternate">Alternate</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="tactical">Tactical</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tplNetName">Net Name</label>
+                    <input type="text" id="tplNetName" class="form-control" placeholder="Net name">
+                </div>
+                <div class="form-group">
+                    <label for="tplCallsign">Callsign</label>
+                    <input type="text" id="tplCallsign" class="form-control" placeholder="Callsign">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tplEmission">Emission Designator</label>
+                    <input type="text" id="tplEmission" class="form-control" placeholder="e.g. 16K0F3E">
+                </div>
+                <div class="form-group">
+                    <label for="tplBandwidth">Bandwidth</label>
+                    <input type="text" id="tplBandwidth" class="form-control" placeholder="e.g. 16 kHz">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tplPurpose">Purpose</label>
+                <textarea id="tplPurpose" class="form-control" rows="2" placeholder="Describe the typical purpose..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="document.getElementById('templateModal').style.display='none'">Cancel</button>
+            <button class="btn btn-primary" onclick="saveTemplate()">
+                <i class="fas fa-save"></i> Save Template
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/unit_frequencies.js"></script>
+</body>
+</html>

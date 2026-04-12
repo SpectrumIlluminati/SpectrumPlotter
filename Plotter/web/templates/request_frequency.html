@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequency Request — SFAF Plotter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="/js/modules/auth-guard.js"></script>
+    <script>requireRole(['admin','ntia','agency','combatant_command','command','ism','operator']);</script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0a1a; color: #e0e0e0; min-height: 100vh; }
+
+        /* ── Header ── */
+        .app-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; height: 56px;
+            background: rgba(10,10,30,0.95); border-bottom: 1px solid rgba(100,150,255,0.2);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .app-header h1 { font-size: 1.05rem; color: #64b5f6; white-space: nowrap; }
+        .header-nav { display: flex; gap: 2px; }
+        .nav-link {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border-radius: 6px;
+            color: #9e9e9e; text-decoration: none; font-size: 0.82rem; transition: all 0.2s;
+        }
+        .nav-link:hover { color: #e0e0e0; background: rgba(100,150,255,0.08); }
+        .nav-link.active { color: #64b5f6; background: rgba(100,150,255,0.12); }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .btn-icon {
+            width: 34px; height: 34px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(100,150,255,0.1); color: #9e9e9e;
+            text-decoration: none; border: none; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-icon:hover { background: rgba(100,150,255,0.2); color: #e0e0e0; }
+
+        /* ── Layout ── */
+        .page { max-width: 1160px; margin: 0 auto; padding: 28px 16px 80px; }
+        .req-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+        .req-layout.review-active {
+            grid-template-columns: 1fr;
+        }
+        .req-layout.review-active .req-preview { display: none; }
+        .req-form-col { min-width: 0; }
+
+        /* ── Request Preview Panel ── */
+        .req-preview {
+            position: sticky; top: 72px;
+            background: rgba(10,10,26,0.85); border: 1px solid rgba(100,150,255,0.18);
+            border-radius: 14px; padding: 16px; font-size: 0.8rem;
+            max-height: calc(100vh - 100px); overflow-y: auto;
+        }
+
+        @media (max-width: 700px) {
+            .req-layout { grid-template-columns: 1fr; }
+            .req-preview { display: none !important; }
+        }
+        .rp-header {
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em;
+            text-transform: uppercase; color: #64b5f6;
+            padding-bottom: 10px; margin-bottom: 10px;
+            border-bottom: 1px solid rgba(100,150,255,0.14);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .rp-section { margin-bottom: 12px; }
+        .rp-section-title {
+            font-size: 0.67rem; font-weight: 600; letter-spacing: 0.08em;
+            text-transform: uppercase; color: #546e7a; margin-bottom: 6px;
+        }
+        .rp-row { display: flex; flex-direction: column; margin-bottom: 6px; }
+        .rp-label { font-size: 0.67rem; color: #546e7a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .rp-value { color: #cfd8dc; font-size: 0.8rem; word-break: break-word; }
+        .rp-value.rp-highlight { color: #64b5f6; font-weight: 600; }
+        .rp-value.rp-warn { color: #fbbf24; }
+        .rp-empty {
+            color: #424242; text-align: center; padding: 24px 8px; font-size: 0.78rem; line-height: 1.8;
+        }
+        .rp-divider { border: none; border-top: 1px solid rgba(100,150,255,0.08); margin: 10px 0; }
+
+        /* ── Mode selector ── */
+        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; max-width: 860px; }
+        .mode-card {
+            background: rgba(15,15,35,0.6); border: 2px solid rgba(100,150,255,0.15);
+            border-radius: 12px; padding: 18px 20px; cursor: pointer;
+            text-align: left; transition: all 0.2s; color: inherit;
+        }
+        .mode-card:hover { border-color: rgba(100,150,255,0.4); background: rgba(20,20,50,0.7); }
+        .mode-card.active { border-color: #64b5f6; background: rgba(100,150,255,0.08); }
+        .mode-card-icon { font-size: 1.4rem; color: #64b5f6; margin-bottom: 8px; }
+        .mode-card-title { font-size: 0.95rem; font-weight: 600; color: #e0e0e0; margin-bottom: 4px; }
+        .mode-card-desc { font-size: 0.78rem; color: #9e9e9e; line-height: 1.4; }
+
+        /* ── Progress ── */
+        .wizard-progress {
+            display: flex; align-items: flex-start;
+            position: relative; margin-bottom: 24px;
+        }
+        .wizard-progress::before {
+            content: ''; position: absolute;
+            top: 17px; left: 20px; right: 20px; height: 2px;
+            background: rgba(100,150,255,0.12);
+        }
+        .wp-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; z-index: 1; }
+        .wp-bubble {
+            width: 34px; height: 34px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem; font-weight: 700;
+            background: #0a0a1a; border: 2px solid rgba(100,150,255,0.18); color: #424242;
+            transition: all 0.2s; user-select: none;
+        }
+        .wp-step.active .wp-bubble { border-color: #64b5f6; color: #64b5f6; background: rgba(100,150,255,0.1); }
+        .wp-step.done .wp-bubble { border-color: #10b981; background: rgba(16,185,129,0.12); color: #10b981; }
+        .wp-label { font-size: 0.62rem; color: #424242; margin-top: 4px; text-align: center; max-width: 64px; }
+        .wp-step.active .wp-label { color: #9e9e9e; }
+        .wp-step.done .wp-label { color: #4caf50; }
+        .wp-bubble.clickable { cursor: pointer; }
+        .wp-bubble.clickable:hover { transform: scale(1.15); box-shadow: 0 0 0 3px rgba(100,150,255,0.25); }
+
+        /* ── Wizard card ── */
+        .wizard-card {
+            background: rgba(15,15,35,0.7); border: 1px solid rgba(100,150,255,0.14);
+            border-radius: 14px; padding: 32px; margin-bottom: 14px;
+        }
+        .step-header { margin-bottom: 24px; }
+        .step-header h2 { font-size: 1.2rem; color: #e0e0e0; margin-bottom: 6px; }
+        .step-header p { font-size: 0.82rem; color: #9e9e9e; line-height: 1.5; }
+
+        /* ── Form elements ── */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.82rem; color: #9e9e9e; margin-bottom: 6px; font-weight: 500; }
+        .form-control {
+            width: 100%; padding: 9px 13px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(100,150,255,0.2);
+            border-radius: 8px; color: #e0e0e0; font-size: 0.88rem;
+            transition: border-color 0.2s; font-family: inherit;
+        }
+        .form-control:focus { outline: none; border-color: #64b5f6; background: rgba(100,150,255,0.04); }
+        .form-control.invalid { border-color: #ef5350; }
+        textarea.form-control { resize: vertical; min-height: 90px; }
+        select.form-control { background: #0d1117; color: #e0e0e0; }
+        select.form-control option { background: #0d1117; color: #e0e0e0; }
+        select.form-control option:checked { background: #1e3a5f; color: #90caf9; }
+        .form-hint { font-size: 0.73rem; color: #616161; margin-top: 4px; display: block; }
+        .required { color: #ef5350; }
+        .optional { color: #616161; font-size: 0.72rem; font-weight: 400; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* ── Card options (button-grid selector) ── */
+        .card-options { display: flex; flex-wrap: wrap; gap: 8px; }
+        .card-option {
+            background: rgba(10,10,25,0.8); border: 1px solid rgba(100,150,255,0.2);
+            border-radius: 10px; padding: 11px 14px; cursor: pointer;
+            color: #9e9e9e; transition: all 0.2s; text-align: center;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .card-option:hover { border-color: rgba(100,150,255,0.45); color: #e0e0e0; background: rgba(100,150,255,0.07); }
+        .card-option.selected { border-color: #64b5f6; background: rgba(100,150,255,0.14); color: #64b5f6; }
+        .card-option i { font-size: 1.1rem; }
+        .opt-label { font-size: 0.82rem; font-weight: 600; }
+        .opt-sub { font-size: 0.68rem; color: inherit; opacity: 0.7; }
+
+        /* Op type: stretch to fill row */
+        .op-options { flex-wrap: nowrap; }
+        .op-options .card-option { flex: 1; min-width: 0; }
+
+        /* Band options */
+        .band-options .card-option { flex: 1; min-width: 120px; }
+        .band-label { font-size: 0.88rem; font-weight: 700; }
+        .band-range { font-size: 0.78rem; color: #64b5f6; margin-top: 2px; }
+        .band-note { font-size: 0.68rem; color: #9e9e9e; margin-top: 1px; }
+
+        /* Range options */
+        .range-options .card-option { flex: 1; min-width: 80px; }
+        .range-value { font-size: 0.85rem; font-weight: 700; }
+        .range-note { font-size: 0.68rem; color: #9e9e9e; }
+
+
+        /* ── Antenna type combobox ── */
+        .ant-combo { position: relative; }
+        .ant-combo-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            max-height: 220px; overflow-y: auto;
+            background: #12122a; border: 1px solid rgba(100,150,255,0.35);
+            border-top: none; border-radius: 0 0 8px 8px;
+            z-index: 300; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .ant-combo-item {
+            padding: 7px 12px; cursor: pointer;
+            font-size: 0.87rem; color: #d0d0e0;
+            border-bottom: 1px solid rgba(100,150,255,0.07);
+        }
+        .ant-combo-item:last-child { border-bottom: none; }
+        .ant-combo-item:hover { background: rgba(100,150,255,0.15); color: #fff; }
+        .ant-combo-empty { padding: 8px 12px; color: #546e7a; font-size: 0.85rem; font-style: italic; }
+        .ant-combo-input:focus { border-radius: 8px 8px 0 0; }
+
+        /* Freq toggle */
+        .freq-toggle { display: flex; gap: 8px; margin-bottom: 20px; }
+        .freq-toggle-btn {
+            flex: 1; padding: 9px 14px;
+            background: rgba(10,10,25,0.8); border: 1px solid rgba(100,150,255,0.2);
+            border-radius: 8px; color: #9e9e9e;
+            cursor: pointer; transition: all 0.2s; font-size: 0.82rem; font-family: inherit;
+        }
+        .freq-toggle-btn.active { border-color: #64b5f6; background: rgba(100,150,255,0.1); color: #64b5f6; }
+        .freq-section { display: none; }
+        .freq-section.visible { display: block; }
+        .range-row { display: flex; align-items: center; gap: 10px; }
+        .range-sep { color: #616161; flex-shrink: 0; }
+
+        /* Hours */
+        .check-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.82rem; color: #9e9e9e; }
+
+        /* ── Wizard nav ── */
+        .wizard-nav { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+        .spacer { flex: 1; }
+        .btn {
+            padding: 9px 18px; border-radius: 8px;
+            border: 1px solid rgba(100,150,255,0.25); background: rgba(15,15,35,0.8);
+            color: #9e9e9e; cursor: pointer; font-size: 0.83rem; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 7px;
+            transition: all 0.2s; text-decoration: none; font-family: inherit;
+        }
+        .btn:hover { color: #e0e0e0; border-color: rgba(100,150,255,0.45); }
+        .btn-primary { background: rgba(100,150,255,0.12); border-color: #64b5f6; color: #64b5f6; }
+        .btn-primary:hover { background: rgba(100,150,255,0.22); color: #90caf9; }
+        .btn-success { background: rgba(16,185,129,0.12); border-color: #10b981; color: #10b981; }
+        .btn-success:hover { background: rgba(16,185,129,0.22); }
+        .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+
+        /* ── Manual step visibility ── */
+        .manual-step { display: none; }
+        .manual-step.active { display: block; }
+
+        /* ── Guided step visibility ── */
+        .guided-step { display: none; }
+        .guided-step.active { display: block; }
+
+        /* ── Review ── */
+        .review-section {
+            background: rgba(8,8,20,0.5); border: 1px solid rgba(100,150,255,0.1);
+            border-radius: 10px; padding: 18px; margin-bottom: 14px;
+        }
+        .review-section h3 {
+            font-size: 0.82rem; color: #64b5f6; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 7px; text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .review-row {
+            display: flex; gap: 10px; padding: 5px 0;
+            border-bottom: 1px solid rgba(100,150,255,0.05);
+        }
+        .review-row:last-child { border-bottom: none; }
+        .review-lbl { width: 170px; flex-shrink: 0; font-size: 0.78rem; color: #616161; }
+        .review-val { font-size: 0.82rem; color: #c0c0c0; flex: 1; min-width: 0; word-break: break-word; overflow-wrap: anywhere; }
+        .review-empty { font-size: 0.82rem; color: #383838; font-style: italic; }
+        .review-input, .review-select {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(100,150,255,0.2);
+            border-radius: 5px; color: #e0e0e0; font-size: 0.82rem; padding: 4px 8px;
+            font-family: inherit; transition: border-color 0.15s;
+        }
+        .review-input:focus, .review-select:focus {
+            outline: none; border-color: rgba(100,150,255,0.5); background: rgba(255,255,255,0.08);
+        }
+        .review-select option { background: #1a1a2e; }
+        .review-textarea { resize: vertical; min-height: 52px; line-height: 1.4; }
+        .review-subsection { margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(100,150,255,0.1); }
+        .review-subsection h4 { font-size: 0.75rem; font-weight: 600; color: #8899cc; text-transform: uppercase;
+            letter-spacing: 0.06em; margin: 0 0 6px 0; }
+        .review-subsection h4 i { margin-right: 5px; }
+        .review-note { color: #8899cc; font-style: italic; font-size: 0.8rem; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; top: 66px; right: 20px; z-index: 9999;
+            padding: 13px 18px; border-radius: 8px;
+            font-size: 0.83rem; font-weight: 600; color: white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4); max-width: 340px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        @keyframes toastIn { from { transform: translateX(380px); opacity: 0; } to { transform: none; opacity: 1; } }
+        @keyframes toastOut { from { transform: none; opacity: 1; } to { transform: translateX(380px); opacity: 0; } }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 9000;
+            background: rgba(0,0,0,0.65); align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: #0f0f23; border: 1px solid rgba(100,150,255,0.25);
+            border-radius: 14px; padding: 26px; max-width: 480px; width: 90%;
+        }
+        .modal-box h3 { color: #fbbf24; margin-bottom: 12px; font-size: 1rem; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+
+        /* ── Divider ── */
+        .section-divider { border: none; border-top: 1px solid rgba(100,150,255,0.1); margin: 20px 0; }
+        .sipr-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 8px;
+            padding: 14px 16px;
+            color: #fca5a5;
+            margin-top: 12px;
+        }
+        .sipr-banner i { font-size: 1.2rem; margin-top: 2px; flex-shrink: 0; color: #ef4444; }
+        .sipr-banner strong { display: block; color: #fca5a5; margin-bottom: 4px; }
+        .sipr-banner span { font-size: 0.88rem; color: #fca5a5; opacity: 0.9; }
+
+        /* Review step: already single-column; no extra overrides needed */
+        @media (max-width: 600px) {
+            .mode-selector { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .op-options { flex-wrap: wrap; }
+            .wizard-progress { display: none; }
+            .wizard-card { padding: 20px; }
+        }
+
+        /* ── Operating area map ── */
+        .area-map-wrap {
+            border: 1px solid rgba(100,150,255,0.25);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .area-map-toolbar {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 10px;
+            background: rgba(10,10,25,0.85);
+            border-bottom: 1px solid rgba(100,150,255,0.15);
+        }
+        .area-map-toolbar span {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.07em; color: #64b5f6; margin-right: 4px;
+        }
+        #g_operatingAreaMap {
+            width: 100%; height: 380px;
+            background: #111;
+        }
+        .map-layer-btn {
+            padding: 2px 7px;
+            font-size: 0.65rem; font-weight: 600;
+            background: transparent;
+            border: 1px solid rgba(100,150,255,0.25);
+            border-radius: 4px;
+            color: #64748b;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .map-layer-btn:hover { background: rgba(100,150,255,0.15); color: #94a3b8; }
+        .map-layer-btn.active { background: rgba(100,181,246,0.18); border-color: #64b5f6; color: #64b5f6; }
+        .map-status {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 8px; padding: 8px 12px;
+            background: rgba(100,150,255,0.08);
+            border: 1px solid rgba(100,150,255,0.2);
+            border-radius: 6px; font-size: 0.85rem; color: #9fb8d8;
+        }
+        .map-status.has-shape { color: #81c784; border-color: rgba(129,199,132,0.35); background: rgba(129,199,132,0.08); }
+        .map-clear-btn {
+            margin-left: auto; padding: 2px 10px;
+            background: transparent; border: 1px solid rgba(255,100,100,0.5);
+            border-radius: 4px; color: #ef9a9a; cursor: pointer; font-size: 0.8rem;
+        }
+        .map-clear-btn:hover { background: rgba(255,100,100,0.15); }
+        /* Override Leaflet dark theme conflicts */
+        .leaflet-container { font-family: inherit; }
+        .map-coord-row { display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap; }
+        .map-coord-row label { font-size:0.85rem; color:#9fb8d8; white-space:nowrap; margin:0; }
+        .map-coord-input { flex:1; min-width:220px; padding:7px 10px; background:rgba(0,0,0,0.3); border:1px solid rgba(100,150,255,0.2); border-radius:8px; color:#e0e0e0; font-size:0.88rem; font-family:inherit; }
+        .map-coord-input.coord-error { border-color:#ef5350; }
+        .map-coord-btn { padding:7px 14px; background:rgba(100,150,255,0.15); border:1px solid rgba(100,150,255,0.35); border-radius:8px; color:#90caf9; cursor:pointer; font-size:0.85rem; white-space:nowrap; }
+        .map-coord-btn:hover { background:rgba(100,150,255,0.25); }
+        .map-coord-hint { width:100%; font-size:0.78rem; color:#607d8b; margin-top:2px; }
+        .map-radius-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
+        .map-radius-row label { font-size:0.85rem; color:#9fb8d8; white-space:nowrap; margin:0; }
+        .map-radius-row input { width:110px; }
+        .map-radius-row select { width:90px; }
+        /* Field 130 time buttons */
+        .f130-group { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+        .f130-btn {
+            display:flex; flex-direction:column; align-items:center;
+            padding:8px 14px; background:rgba(0,0,0,0.25);
+            border:1px solid rgba(100,150,255,0.2); border-radius:8px;
+            color:#b0c4de; cursor:pointer; font-size:0.82rem; gap:2px;
+            transition:border-color 0.15s, background 0.15s;
+        }
+        .f130-btn:hover { border-color:rgba(100,150,255,0.5); background:rgba(100,150,255,0.08); }
+        .f130-btn.selected { border-color:#64b5f6; background:rgba(100,181,246,0.12); color:#e3f2fd; }
+        .f130-btn .f130-code { font-size:1.05rem; font-weight:700; color:#90caf9; }
+        .f130-btn.selected .f130-code { color:#64b5f6; }
+        .f130-btn .f130-desc { font-size:0.75rem; color:#78909c; text-align:center; }
+        .f130-btn.selected .f130-desc { color:#90caf9; }
+        .f130-value { margin-top:8px; font-size:0.82rem; color:#9fb8d8; min-height:1.2em; }
+
+        /* ── Tx/Rx section headers & station type ── */
+        .txrx-header {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.07em; padding: 4px 0 12px;
+        }
+        .txrx-header.tx { color: #64b5f6; }
+        .txrx-header.rx { color: #ffa726; }
+        .txrx-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 9px; border-radius: 20px; font-size: 0.68rem;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .txrx-badge.tx { background: rgba(100,181,246,0.15); color: #64b5f6; border: 1px solid rgba(100,181,246,0.3); }
+        .txrx-badge.rx { background: rgba(255,167,38,0.15); color: #ffa726; border: 1px solid rgba(255,167,38,0.3); }
+        .fixed-fields-box {
+            background: rgba(149,117,205,0.07); border: 1px solid rgba(149,117,205,0.22);
+            border-radius: 8px; padding: 14px 16px; margin-top: 8px;
+        }
+        .fixed-label {
+            font-size: 0.72rem; color: #b39ddb; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .rx-section-wrapper {
+            background: rgba(255,167,38,0.04); border: 1px solid rgba(255,167,38,0.18);
+            border-radius: 10px; padding: 16px; margin-top: 4px; margin-bottom: 16px;
+        }
+        .mobility-unit { color: #9e9e9e; font-size: 0.82rem; white-space: nowrap; }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <h1><i class="fas fa-wave-square"></i> SFAF Plotter</h1>
+    <nav class="header-nav">
+        <a href="/map-viewer" class="nav-link"><i class="fas fa-map-marked-alt"></i><span>Map</span></a>
+        <a href="/database" class="nav-link"><i class="fas fa-database"></i><span>Database</span></a>
+        <a href="/frequency" class="nav-link"><i class="fas fa-broadcast-tower"></i><span>Frequencies</span></a>
+        <a href="/workbox" class="nav-link ism-nav-link" style="display:none"><i class="fas fa-inbox"></i><span>Workbox</span></a>
+        <a href="/frequency/request" class="nav-link active"><i class="fas fa-file-signature"></i><span>Request</span></a>
+        <a href="/view-manager" class="nav-link"><i class="fas fa-cog"></i><span>Table Manager</span></a>
+    </nav>
+    <div class="header-actions">
+        <a href="/frequency" class="btn btn-sm"><i class="fas fa-list"></i> My Requests</a>
+        <a href="/admin" class="btn-icon admin-console-link" title="Admin Console" style="display:none"><i class="fas fa-shield-halved"></i></a>
+        <a href="/profile" class="btn-icon" title="User Account"><i class="fas fa-user-circle"></i></a>
+    </div>
+</header>
+
+<div class="page">
+
+    <!-- Mode selector -->
+    <div class="mode-selector">
+        <button class="mode-card active" id="modeGuidedCard" onclick="setMode('guided')">
+            <div class="mode-card-icon"><i class="fas fa-magic"></i></div>
+            <div class="mode-card-title">Guided Request</div>
+            <div class="mode-card-desc">Plain-language questions. Skips technical details you won't know. Recommended for most users.</div>
+        </button>
+        <button class="mode-card" id="modeManualCard" onclick="setMode('manual')">
+            <div class="mode-card-icon"><i class="fas fa-edit"></i></div>
+            <div class="mode-card-title">Manual Entry</div>
+            <div class="mode-card-desc">All technical fields exposed. For experienced users and S6 frequency managers.</div>
+        </button>
+    </div>
+
+    <!-- ═══════════════════ TWO-COLUMN LAYOUT ═══════════════════ -->
+    <div class="req-layout">
+
+    <!-- LEFT: Live request preview -->
+    <aside class="req-preview" id="reqPreview">
+        <div class="rp-header"><i class="fas fa-clipboard-list"></i> Request Summary</div>
+        <div id="rpContent">
+            <div class="rp-empty"><i class="fas fa-pencil-alt"></i><br>Fill out the form to see a live summary here.</div>
+        </div>
+    </aside>
+
+    <!-- RIGHT: Form content -->
+    <div class="req-form-col">
+
+    <!-- ═══════════════════ GUIDED MODE ═══════════════════ -->
+    <div id="guidedMode">
+        <div class="wizard-progress" id="guidedProgress"></div>
+
+        <div class="wizard-card">
+
+            <!-- G1: What's this for? -->
+            <div class="guided-step active" data-gstep="1">
+                <div class="step-header">
+                    <h2>What's this frequency request for?</h2>
+                    <p>Tell us the duration and nature of this frequency need.</p>
+                </div>
+
+                <!-- Q1: Duration -->
+                <div class="form-group">
+                    <label>Is this a permanent or temporary assignment? <span class="required">*</span></label>
+                    <div class="card-options op-options" id="g_durationOptions">
+                        <button class="card-option" data-val="permanent" onclick="selectDuration('permanent')">
+                            <i class="fas fa-infinity"></i>
+                            <span class="opt-label">Permanent</span>
+                            <span class="opt-sub">Ongoing — no end date</span>
+                        </button>
+                        <button class="card-option" data-val="temporary" onclick="selectDuration('temporary')">
+                            <i class="fas fa-clock"></i>
+                            <span class="opt-label">Temporary</span>
+                            <span class="opt-sub">Limited duration</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Q2: Nature (shown only when Temporary is selected) -->
+                <div class="form-group" id="g_natureGroup" style="display:none">
+                    <label>What type of operation? <span class="required">*</span></label>
+                    <div class="card-options op-options" id="g_natureOptions">
+                        <button class="card-option" data-val="exercise" onclick="selectNature('exercise')">
+                            <i class="fas fa-flag"></i>
+                            <span class="opt-label">Training / Exercise</span>
+                            <span class="opt-sub">Scheduled exercise or training event</span>
+                        </button>
+                        <button class="card-option" data-val="real_world" onclick="selectNature('real_world')">
+                            <i class="fas fa-globe"></i>
+                            <span class="opt-label">Real World</span>
+                            <span class="opt-sub">Operational mission or contingency</span>
+                        </button>
+                    </div>
+                </div>
+
+                <input type="hidden" id="g_requestType">
+
+                <hr class="section-divider">
+
+                <div class="form-group">
+                    <label>Classification <span class="required">*</span></label>
+                    <select id="g_classification" class="form-control" onchange="onClassificationChange('g_classification','g_siprBanner','g_nextBtn')">
+                        <option value="UNCLASS">UNCLASSIFIED</option>
+                        <option value="FOUO">FOUO</option>
+                        <option value="SECRET">SECRET</option>
+                        <option value="TS">TOP SECRET</option>
+                    </select>
+                </div>
+
+                <div id="g_siprBanner" class="sipr-banner" style="display:none">
+                    <i class="fas fa-shield-alt"></i>
+                    <strong>All Classified Requests Must Be Submitted on SIPR.</strong>
+                    <span>This form is for UNCLASSIFIED use only. Please submit your request through the appropriate classified network.</span>
+                </div>
+
+            </div>
+
+            <!-- G2: Who is requesting? -->
+            <div class="guided-step" data-gstep="2">
+                <div class="step-header">
+                    <h2>Who is making this request?</h2>
+                    <p>Identify who submitted this request, which unit owns the frequency, and who can be contacted in an emergency.</p>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>803 — Requesting POC</label>
+                        <input type="text" id="g_requestingPoc" class="form-control" placeholder="Pre-filled from your account">
+                        <span class="form-hint">Pre-filled from your profile — edit if submitting on behalf of someone else</span>
+                    </div>
+                    <div class="form-group">
+                        <label>803 — POC Phone <span class="optional">(not DSN)</span></label>
+                        <input type="text" id="g_pocPhone" class="form-control" placeholder="Pre-filled from your account">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>207 — Operating Unit(s) <span class="required">*</span></label>
+                    <select id="g_unitId" class="form-control" required>
+                        <option value="">Loading units…</option>
+                    </select>
+                    <span class="form-hint">Which unit(s) are using this frequency? If base-wide support, which unit will own this license?</span>
+                </div>
+
+                <div class="form-group">
+                    <label>520 — STOP BUZZER Contact</label>
+                    <input type="text" id="g_stopBuzzer" class="form-control"
+                        placeholder="e.g., 1 SOW/CP, 850-884-8100 — Tom N Jerry, 777-867-5309, 24/7 Ops Desk">
+                    <span class="form-hint">Individual or desk that can order immediate cessation of activity on this frequency if directed by federal agencies. Cell phone or landline only — no DSN.</span>
+                </div>
+
+                <div class="form-group">
+                    <label>206 — ISM Office <span class="required">*</span></label>
+                    <select id="g_ismOffice" class="form-control" required>
+                        <option value="">Loading installations…</option>
+                    </select>
+                    <span class="form-hint">Which installation's ISM office will this request be sent to?</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Net / Channel name <span class="optional">(optional)</span></label>
+                        <input type="text" id="g_netName" class="form-control" placeholder="e.g., Alpha Command Net">
+                    </div>
+                    <div class="form-group">
+                        <label>Callsign <span class="optional">(optional)</span></label>
+                        <input type="text" id="g_callsign" class="form-control" placeholder="e.g., DRAGON 6">
+                    </div>
+                </div>
+            </div>
+
+            <!-- G3: What frequency? -->
+            <div class="guided-step" data-gstep="3">
+                <div class="step-header">
+                    <h2>What frequency do you need?</h2>
+                    <p>Enter a specific frequency, or select the band you need and let the frequency manager assign one.</p>
+                </div>
+
+                <div class="freq-toggle">
+                    <button class="freq-toggle-btn active" id="ftb_specific" onclick="setFreqMode('specific')">
+                        <i class="fas fa-crosshairs"></i> I know the frequency
+                    </button>
+                    <button class="freq-toggle-btn" id="ftb_band" onclick="setFreqMode('band')">
+                        <i class="fas fa-broadcast-tower"></i> I need one assigned from a band
+                    </button>
+                </div>
+
+                <div class="freq-section visible" id="freqSpecificSection">
+                    <div class="form-group">
+                        <label>Frequency (MHz)</label>
+                        <input type="text" id="g_specificFreq" class="form-control" placeholder="e.g., 35.450" style="font-size:1.1rem;letter-spacing:0.02em;">
+                        <span class="form-hint">Enter the exact frequency in MHz</span>
+                    </div>
+                </div>
+
+                <div class="freq-section" id="freqBandSection">
+                    <div class="form-group">
+                        <label>Select a frequency band</label>
+                        <div class="card-options band-options" id="g_bandOptions">
+                            <button class="card-option" data-band="hf" onclick="selectBand('hf')">
+                                <div class="band-label">HF</div>
+                                <div class="band-range">2–29.890 MHz</div>
+                                <div class="band-note">HF voice / data</div>
+                            </button>
+                            <button class="card-option" data-band="vhf_fm" onclick="selectBand('vhf_fm')">
+                                <div class="band-label">VHF-FM</div>
+                                <div class="band-range">30–88 MHz</div>
+                                <div class="band-note">SINCGARS, tactical</div>
+                            </button>
+                            <button class="card-option" data-band="atc" onclick="selectBand('atc')">
+                                <div class="band-label">ATC</div>
+                                <div class="band-range">118–137 MHz</div>
+                                <div class="band-note">Aviation VHF-AM</div>
+                            </button>
+                            <button class="card-option" data-band="vhf" onclick="selectBand('vhf')">
+                                <div class="band-label">VHF</div>
+                                <div class="band-range">138–151 MHz</div>
+                                <div class="band-note">Land mobile, tactical</div>
+                            </button>
+                            <button class="card-option" data-band="uhf" onclick="selectBand('uhf')">
+                                <div class="band-label">UHF</div>
+                                <div class="band-range">225–400 MHz</div>
+                                <div class="band-note">Tactical air, SATCOM</div>
+                            </button>
+                            <button class="card-option" data-band="manet" onclick="selectBand('manet')">
+                                <div class="band-label">MANET</div>
+                                <div class="band-range">Wideband IP mesh</div>
+                                <div class="band-note">ANW2C · SRW · TSM · WRS · MPU5 · Silvus</div>
+                            </button>
+                        </div>
+                        <div id="g_manetSubBands" style="display:none; margin-top:0.5rem;">
+                            <label style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.35rem; display:block;">Select MANET sub-band</label>
+                            <div class="card-options band-options" id="g_bandOptions2">
+                                <button class="card-option" data-band="manet_uhf" onclick="selectBand('manet_uhf')">
+                                    <div class="band-label">UHF</div>
+                                    <div class="band-range">225–400 MHz</div>
+                                    <div class="band-note">WRS / broadband</div>
+                                </button>
+                                <button class="card-option" data-band="manet_low_l" onclick="selectBand('manet_low_l')">
+                                    <div class="band-label">Low L</div>
+                                    <div class="band-range">1370–1390 MHz</div>
+                                    <div class="band-note">ANW2C / SRW</div>
+                                </button>
+                                <button class="card-option" data-band="manet_high_l" onclick="selectBand('manet_high_l')">
+                                    <div class="band-label">High L</div>
+                                    <div class="band-range">1785–1850 MHz</div>
+                                    <div class="band-note">TSM / SRW</div>
+                                </button>
+                                <button class="card-option" data-band="manet_s" onclick="selectBand('manet_s')">
+                                    <div class="band-label">S-Band</div>
+                                    <div class="band-range">2200–2390 MHz</div>
+                                    <div class="band-note">MPU5 / Silvus</div>
+                                </button>
+                                <button class="card-option" data-band="manet_c" onclick="selectBand('manet_c')">
+                                    <div class="band-label">C-Band</div>
+                                    <div class="band-range">4400–4940 MHz</div>
+                                    <div class="band-note">MPU5 / Silvus</div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Or enter a custom range (MHz)</label>
+                        <div class="range-row">
+                            <input type="number" id="g_freqMin" class="form-control" placeholder="Min" step="0.001">
+                            <span class="range-sep">to</span>
+                            <input type="number" id="g_freqMax" class="form-control" placeholder="Max" step="0.001">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Number of Frequencies Requested</label>
+                    <input type="number" id="g_numFrequencies" class="form-control" value="1" min="1" style="max-width:120px;">
+                    <span class="form-hint">How many separate frequencies are needed for this net / operation?</span>
+                </div>
+
+            </div>
+
+            <!-- G4: What equipment? -->
+            <div class="guided-step" data-gstep="4">
+                <div class="step-header">
+                    <h2>What radio or equipment will use this frequency?</h2>
+                    <p>Selecting your equipment lets us pre-fill the technical specifications. Choose <strong>Other / Unknown</strong> if you're not sure — your S6 can complete the technical details.</p>
+                </div>
+
+                <!-- Transmitter identification -->
+                <div class="txrx-header tx"><i class="fas fa-broadcast-tower"></i> Transmitter (Tx) <span class="txrx-badge tx">TX</span></div>
+
+                <!-- Equipment library cascade -->
+                <div id="g_equipLibrary" style="margin-bottom:18px;padding:14px 16px;
+                     background:rgba(15,23,42,0.5);border:1px solid rgba(100,150,255,0.12);border-radius:10px;">
+                    <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">
+                        <i class="fas fa-database" style="margin-right:5px;"></i> Equipment Library
+                    </div>
+
+                    <!-- Row 1: Equipment select -->
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">Equipment</label>
+                        <select id="g_equipLibSel" class="form-control" onchange="onEquipLibChange()">
+                            <option value="">— Select from library —</option>
+                        </select>
+                    </div>
+
+                    <!-- Row 2: Transmitter select (hidden until equipment chosen) -->
+                    <div id="g_txRow" style="display:none;margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">Transmitter</label>
+                        <select id="g_txSel" class="form-control" onchange="onTxSelChange()">
+                            <option value="">— Select transmitter —</option>
+                        </select>
+                    </div>
+
+                    <!-- Row 3: Mode select (hidden until transmitter chosen) -->
+                    <div id="g_modeRow" style="display:none;margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">Mode / Emission</label>
+                        <select id="g_modeSel" class="form-control" onchange="onModeSelChange()">
+                            <option value="">— Select mode —</option>
+                        </select>
+                    </div>
+
+                    <!-- Row 4: Antenna select (hidden until mode chosen, filtered by freq range) -->
+                    <div id="g_antRow" style="display:none;margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">
+                            Antenna
+                            <span id="g_antFilterNote" style="font-size:0.7rem;color:#64748b;margin-left:6px;font-weight:400;"></span>
+                        </label>
+                        <select id="g_antSel" class="form-control" onchange="onAntSelChange()">
+                            <option value="">— Select antenna —</option>
+                        </select>
+                    </div>
+
+                    <!-- Mode + Antenna preview + apply -->
+                    <div id="g_libPreview" style="display:none;margin-top:8px;padding:10px 12px;
+                         background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:7px;
+                         display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div id="g_libPreviewText" style="font-size:0.82rem;color:#e2e8f0;flex:1;min-width:0;"></div>
+                        <button type="button" onclick="applyLibMode()"
+                                style="flex-shrink:0;padding:6px 14px;background:rgba(16,185,129,0.2);
+                                       border:1px solid rgba(16,185,129,0.4);border-radius:6px;
+                                       color:#34d399;font-size:0.82rem;cursor:pointer;white-space:nowrap;">
+                            <i class="fas fa-check"></i> Apply to form
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tx Station Type (Fixed / Mobile) -->
+                <div class="form-group" style="margin-top:8px">
+                    <label>Tx Station Type</label>
+                    <div class="freq-toggle" style="margin-bottom:6px">
+                        <button class="freq-toggle-btn active" id="g_txMobileBtn" onclick="setStationMobility('g','tx','mobile')">
+                            <i class="fas fa-truck-moving"></i> Mobile
+                        </button>
+                        <button class="freq-toggle-btn" id="g_txFixedBtn" onclick="setStationMobility('g','tx','fixed')">
+                            <i class="fas fa-map-pin"></i> Fixed
+                        </button>
+                    </div>
+                    <div id="g_txFixedFields" class="fixed-fields-box" style="display:none">
+                        <div class="fixed-label"><i class="fas fa-map-pin"></i> Fixed Station Parameters</div>
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Site Elevation — AMSL <span class="optional">(Field 358)</span></label>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <input type="number" step="0.1" id="g_txElevation" class="form-control" placeholder="e.g., 42" oninput="calcHAMSL('g_txElevation','g_txFeedpointHeight','g_txHAMSL')">
+                                    <span class="mobility-unit">m</span>
+                                </div>
+                                <span class="form-hint">Height above mean sea level, in meters</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Antenna Feedpoint Height — AGL <span class="optional">(Field 360)</span></label>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <input type="number" step="0.1" id="g_txFeedpointHeight" class="form-control" placeholder="e.g., 12" oninput="calcHAMSL('g_txElevation','g_txFeedpointHeight','g_txHAMSL')">
+                                    <span class="mobility-unit">m</span>
+                                </div>
+                                <span class="form-hint">Height of feedpoint above ground, in meters</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Feedpoint Height — AMSL <span class="optional">(Field 361, auto)</span></label>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <input type="number" step="0.1" id="g_txHAMSL" class="form-control" placeholder="Auto (358 + 360)" readonly style="opacity:0.6;cursor:not-allowed">
+                                    <span class="mobility-unit">m</span>
+                                </div>
+                                <span class="form-hint">Computed: Site Elevation + Feedpoint Height</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <!-- Rx same as Tx -->
+                <div class="form-group">
+                    <label class="check-label" style="font-size:0.88rem;color:#c0c0c0;align-items:flex-start;gap:10px">
+                        <input type="checkbox" id="g_rxSameAsTx" checked onchange="toggleRxSection('g')" style="margin-top:2px;flex-shrink:0">
+                        <span><strong>Rx is same as Tx</strong> — receiver uses the same equipment and installation as the transmitter</span>
+                    </label>
+                </div>
+
+                <!-- Rx section (shown when Rx differs from Tx) -->
+                <div id="g_rxSection" style="display:none">
+                    <div class="rx-section-wrapper">
+                        <div class="txrx-header rx"><i class="fas fa-satellite-dish"></i> Receiver (Rx) <span class="txrx-badge rx">RX</span></div>
+                        <div class="form-row" style="margin-bottom:14px">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Equipment Make / Model</label>
+                                <input type="text" id="g_rxMakeModel" class="form-control" placeholder="e.g., Harris Falcon III RF-7850M">
+                                <span class="form-hint">Manufacturer and model of the receiver unit</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Antenna Type <span class="optional">(Field 354)</span></label>
+                                <input type="text" id="g_rxAntennaType" class="form-control" placeholder="e.g., Yagi, Parabolic Dish, Whip">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-bottom:14px">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Horizontal Beamwidth <span class="optional">(Field 460)</span></label>
+                                <input type="number" step="0.1" id="g_rxHorizBeamwidth" class="form-control" placeholder="degrees (e.g. 17.2)">
+                                <span class="form-hint">3 dB horizontal beamwidth in degrees — omit for omni antennas</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Vertical Beamwidth <span class="optional">(Field 461)</span></label>
+                                <input type="number" step="0.1" id="g_rxVertBeamwidth" class="form-control" placeholder="degrees (e.g. 23)">
+                                <span class="form-hint">3 dB vertical beamwidth in degrees — omit for omni antennas</span>
+                            </div>
+                        </div>
+                        <!-- Rx Station Type -->
+                        <div class="form-group">
+                            <label>Rx Station Type</label>
+                            <div class="freq-toggle" style="margin-bottom:6px">
+                                <button class="freq-toggle-btn active" id="g_rxMobileBtn" onclick="setStationMobility('g','rx','mobile')">
+                                    <i class="fas fa-truck-moving"></i> Mobile
+                                </button>
+                                <button class="freq-toggle-btn" id="g_rxFixedBtn" onclick="setStationMobility('g','rx','fixed')">
+                                    <i class="fas fa-map-pin"></i> Fixed
+                                </button>
+                            </div>
+                            <div id="g_rxFixedFields" class="fixed-fields-box" style="display:none">
+                                <div class="fixed-label"><i class="fas fa-map-pin"></i> Fixed Station Parameters</div>
+                                <div class="form-row">
+                                    <div class="form-group" style="margin-bottom:0">
+                                        <label>Site Elevation — AMSL <span class="optional">(Field 358)</span></label>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <input type="number" step="0.1" id="g_rxElevation" class="form-control" placeholder="e.g., 42" oninput="calcHAMSL('g_rxElevation','g_rxFeedpointHeight','g_rxHAMSL')">
+                                            <span class="mobility-unit">m</span>
+                                        </div>
+                                        <span class="form-hint">Height above mean sea level, in meters</span>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:0">
+                                        <label>Antenna Feedpoint Height — AGL <span class="optional">(Field 459)</span></label>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <input type="number" step="0.1" id="g_rxFeedpointHeight" class="form-control" placeholder="e.g., 12" oninput="calcHAMSL('g_rxElevation','g_rxFeedpointHeight','g_rxHAMSL')">
+                                            <span class="mobility-unit">m</span>
+                                        </div>
+                                        <span class="form-hint">Height of feedpoint above ground, in meters</span>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:0">
+                                        <label>Feedpoint Height — AMSL <span class="optional">(auto)</span></label>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <input type="number" step="0.1" id="g_rxHAMSL" class="form-control" placeholder="Auto (458 + 459)" readonly style="opacity:0.6;cursor:not-allowed">
+                                            <span class="mobility-unit">m</span>
+                                        </div>
+                                        <span class="form-hint">Computed: Site Elevation + Feedpoint Height</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <div class="form-group">
+                    <label>Will communications be encrypted?</label>
+                    <div class="freq-toggle">
+                        <button class="freq-toggle-btn active" id="enc_no"  onclick="setEncrypted(false)">No</button>
+                        <button class="freq-toggle-btn"        id="enc_yes" onclick="setEncrypted(true)">Yes</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Do you know the antenna or transmitter specs?</label>
+                    <div class="freq-toggle">
+                        <button class="freq-toggle-btn active" id="ant_no"  onclick="setKnowsAntenna(false)">No / use defaults</button>
+                        <button class="freq-toggle-btn"        id="ant_yes" onclick="setKnowsAntenna(true)">Yes, I know them</button>
+                    </div>
+                    <div id="g_antennaFields" style="display:none;margin-top:10px">
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Emission Designator / RF Bandwidth</label>
+                                <input type="text" id="g_emissionDesignator" class="form-control" placeholder="e.g., 16K0F3E or 25 kHz">
+                                <span class="form-hint">e.g., 16K0F3E (SINCGARS), 6K00F3E (Harris FALCON), 200KF3E (SATCOM) — enter occupied RF bandwidth if designator unknown (e.g., 25 kHz, 5 MHz)</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Power (Watts)</label>
+                                <input type="number" id="g_powerWatts" class="form-control" placeholder="e.g., 50">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:0.75rem">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Antenna Type <span class="optional">(Field 354)</span></label>
+                                <div class="ant-combo">
+                                    <input type="text" id="g_antennaTypeText" class="form-control ant-combo-input"
+                                           placeholder="Type to search antenna types…" autocomplete="off">
+                                    <input type="hidden" id="g_antennaType">
+                                    <div class="ant-combo-list" id="g_antennaTypeList" style="display:none"></div>
+                                </div>
+                                <span class="form-hint">Annex G — Field 354 antenna type</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Antenna Make / Model <span class="optional">(if known)</span></label>
+                                <input type="text" id="g_antennaMakeModel" class="form-control" placeholder="e.g., Harris RF-3590-AT001">
+                                <span class="form-hint">Manufacturer and model — e.g., Sinclair SD1423, L3Harris RF-3590-AT001</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Antenna Gain (dBi)</label>
+                                <input type="number" step="0.1" id="g_antennaGain" class="form-control" placeholder="e.g., 2.15">
+                                <span class="form-hint">Whip ≈ 2 dBi &nbsp;·&nbsp; Yagi ≈ 7–12 dBi &nbsp;·&nbsp; Dish/parabolic ≈ 20–40 dBi</span>
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:0.75rem">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Polarization <span class="optional">(Field 363)</span></label>
+                                <select id="g_antennaPolarization" class="form-control">
+                                    <option value="">— Select —</option>
+                                    <option value="V">V — Vertical</option>
+                                    <option value="H">H — Horizontal</option>
+                                    <option value="C">C — Circular (RHCP / LHCP)</option>
+                                    <option value="E">E — Elliptical</option>
+                                    <option value="M">M — Mixed / Slant</option>
+                                </select>
+                                <span class="form-hint">Most tactical radios: Vertical (V) &nbsp;·&nbsp; SATCOM / GPS: Circular (C)</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Orientation <span class="optional">(Field 362)</span></label>
+                                <select id="g_antennaOrientation" class="form-control">
+                                    <option value="">— Select —</option>
+                                    <option value="ND">ND — Non-directional / omni</option>
+                                    <option value="SSH">SSH — Scanning horizontally (limited sector)</option>
+                                    <option value="SSV">SSV — Vertical scanning / nodding</option>
+                                    <option value="NB">NB — Narrow beam (space station)</option>
+                                    <option value="EC">EC — Earth coverage (space station)</option>
+                                </select>
+                                <span class="form-hint">Most tactical antennas: ND &nbsp;·&nbsp; Sector/phased arrays: SSH &nbsp;·&nbsp; For fixed azimuth bearings use field 362 per SFAF</span>
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-top:0.75rem">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Horizontal Beamwidth <span class="optional">(Field 360)</span></label>
+                                <input type="number" step="0.1" id="g_txHorizBeamwidth" class="form-control" placeholder="degrees (e.g. 17.2)">
+                                <span class="form-hint">3 dB horizontal beamwidth in degrees — omit for omni antennas</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Vertical Beamwidth <span class="optional">(Field 361)</span></label>
+                                <input type="number" step="0.1" id="g_txVertBeamwidth" class="form-control" placeholder="degrees (e.g. 23)">
+                                <span class="form-hint">3 dB vertical beamwidth in degrees — omit for omni antennas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- G5: Where and when? -->
+            <div class="guided-step" data-gstep="5">
+                <div class="step-header">
+                    <h2>Where and when?</h2>
+                    <p>Describe where the frequency needs to work and when you need it.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Operating Area <span class="optional">(optional)</span></label>
+                    <div class="area-map-wrap">
+                        <div class="area-map-toolbar">
+                            <span><i class="fas fa-layer-group"></i></span>
+                            <button type="button" class="map-layer-btn" data-area-layer="dark"    onclick="setAreaMapLayer('dark',this)">Dark</button>
+                            <button type="button" class="map-layer-btn" data-area-layer="streets" onclick="setAreaMapLayer('streets',this)">Streets</button>
+                            <button type="button" class="map-layer-btn" data-area-layer="sat"     onclick="setAreaMapLayer('sat',this)">Satellite</button>
+                            <button type="button" class="map-layer-btn" data-area-layer="topo"    onclick="setAreaMapLayer('topo',this)">Topo</button>
+                        </div>
+                        <div id="g_operatingAreaMap"></div>
+                    </div>
+                    <div class="map-status" id="g_mapStatus">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Click the map to set the center of operations</span>
+                    </div>
+                    <div class="map-coord-row">
+                        <label><i class="fas fa-crosshairs"></i> Coordinates</label>
+                        <input type="text" id="g_coordInput" class="map-coord-input" placeholder="e.g. 35.6829, -78.4677  or  35°40′58″N 78°28′3″W">
+                        <button type="button" class="map-coord-btn" onclick="applyCoordInput()"><i class="fas fa-map-pin"></i> Go</button>
+                        <span class="map-coord-hint">Decimal degrees (lat, lon) or DMS — both hemispheres accepted</span>
+                    </div>
+                    <div class="map-radius-row" id="g_radiusRow">
+                        <label><i class="fas fa-circle-notch"></i> Radius</label>
+                        <input type="number" id="g_radiusValue" min="0.1" step="0.1" placeholder="e.g. 5" style="width:100px;padding:7px 10px;background:rgba(0,0,0,0.3);border:1px solid rgba(100,150,255,0.2);border-radius:8px;color:#e0e0e0;font-size:0.88rem;font-family:inherit;">
+                        <select id="g_radiusUnit" style="width:80px;padding:7px 8px;background:rgba(0,0,0,0.3);border:1px solid rgba(100,150,255,0.2);border-radius:8px;color:#e0e0e0;font-size:0.88rem;font-family:inherit;">
+                            <option value="km" selected>km</option>
+                            <option value="nm">NM</option>
+                            <option value="mi">mi</option>
+                            <option value="m">m</option>
+                        </select>
+                        <button type="button" class="map-clear-btn" onclick="clearAreaMap()"><i class="fas fa-times"></i> Clear</button>
+                    </div>
+                    <input type="hidden" id="g_operatingAreaGeoJSON">
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:10px;">
+                        <label style="font-size:0.82rem;color:#94a3b8;margin:0;white-space:nowrap;">Applies to:</label>
+                        <div style="display:flex;gap:16px;">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+                                <input type="radio" name="g_areaAppliesTo" value="T" style="accent-color:#64b5f6;"> Transmitter
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+                                <input type="radio" name="g_areaAppliesTo" value="R" style="accent-color:#ffa726;"> Receiver
+                            </label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;">
+                                <input type="radio" name="g_areaAppliesTo" value="B" checked style="accent-color:#4ade80;"> Both
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:0.5rem">
+                    <label>Coverage area description <span class="optional">(optional)</span></label>
+                    <input type="text" id="g_coverageArea" class="form-control" placeholder="e.g., Fort Liberty training ranges, AO HAMMER">
+                    <span class="form-hint">Free-text label for the area — complements the map shape above</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start date <span class="required">*</span></label>
+                        <input type="date" id="g_startDate" class="form-control" required>
+                        <button type="button" class="btn-clear-date" onclick="document.getElementById('g_startDate').value=''">Clear</button>
+                    </div>
+                    <div class="form-group">
+                        <label>End date <span id="g_endDateRequired" class="required">*</span></label>
+                        <input type="date" id="g_endDate" class="form-control">
+                        <button type="button" class="btn-clear-date" onclick="document.getElementById('g_endDate').value=''">Clear</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Hours of operation <span class="optional">(Field 130)</span></label>
+                    <div class="f130-group" id="g_time130Usage">
+                        <button type="button" class="f130-btn" data-val="1" onclick="setTime130('usage','1')">
+                            <span class="f130-code">1</span>
+                            <span class="f130-desc">Constant<br>50–100%</span>
+                        </button>
+                        <button type="button" class="f130-btn" data-val="2" onclick="setTime130('usage','2')">
+                            <span class="f130-code">2</span>
+                            <span class="f130-desc">Regular<br>10–50%</span>
+                        </button>
+                        <button type="button" class="f130-btn" data-val="3" onclick="setTime130('usage','3')">
+                            <span class="f130-code">3</span>
+                            <span class="f130-desc">Intermittent<br>1–10%</span>
+                        </button>
+                        <button type="button" class="f130-btn" data-val="4" onclick="setTime130('usage','4')">
+                            <span class="f130-code">4</span>
+                            <span class="f130-desc">Sporadic<br>&lt;1%</span>
+                        </button>
+                    </div>
+                    <div class="f130-group" id="g_time130H" style="margin-top:10px;display:none">
+                        <span style="font-size:0.78rem;color:#607d8b;align-self:center;margin-right:4px">Daily schedule (HF):</span>
+                        <button type="button" class="f130-btn" data-val="H24" onclick="setTime130('h','H24')">
+                            <span class="f130-code">H24</span>
+                            <span class="f130-desc">24-hr<br>continuous</span>
+                        </button>
+                        <button type="button" class="f130-btn" data-val="HX" onclick="setTime130('h','HX')">
+                            <span class="f130-code">HX</span>
+                            <span class="f130-desc">Intermittent<br>throughout day</span>
+                        </button>
+                        <button type="button" class="f130-btn" data-val="HN" onclick="setTime130('h','HN')">
+                            <span class="f130-code">HN</span>
+                            <span class="f130-desc">Night<br>service</span>
+                        </button>
+                        <button type="button" class="f130-btn" data-val="HJ" onclick="setTime130('h','HJ')">
+                            <span class="f130-code">HJ</span>
+                            <span class="f130-desc">Day<br>service</span>
+                        </button>
+                        <button type="button" class="f130-btn" data-val="HT" onclick="setTime130('h','HT')">
+                            <span class="f130-code">HT</span>
+                            <span class="f130-desc">Transition<br>period</span>
+                        </button>
+                    </div>
+                    <div class="f130-value" id="g_time130Display"></div>
+                    <input type="hidden" id="g_time130">
+                </div>
+            </div>
+
+            <!-- G6: Why? -->
+            <div class="guided-step" data-gstep="6">
+                <div class="step-header">
+                    <h2>Why do you need this frequency?</h2>
+                    <p>Be specific — a clear justification helps the frequency manager process your request faster.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Purpose <span class="required">*</span></label>
+                    <input type="text" id="g_purpose" class="form-control" required
+                        placeholder="e.g. Command &amp; Control, Admin/Log, Close Air Support">
+                </div>
+
+                <div class="form-group">
+                    <label>Description of Use <span class="required">*</span></label>
+                    <textarea id="g_justification" class="form-control" rows="5" required
+                        placeholder="Explain why this frequency is needed and how it supports the mission. Include the operation name, your unit's mission, and why existing frequencies cannot be used."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Mission impact if denied <span class="optional">(optional)</span></label>
+                    <textarea id="g_missionImpact" class="form-control" rows="3"
+                        placeholder="Describe the impact on mission if this request is denied…"></textarea>
+                </div>
+
+            </div>
+
+            <input type="hidden" id="g_priority" value="routine">
+
+            <!-- G7: Review -->
+            <div class="guided-step" data-gstep="7">
+                <div class="step-header">
+                    <h2><i class="fas fa-check-circle" style="color:#10b981"></i> Review Your Request</h2>
+                    <p>Verify everything looks correct before submitting.</p>
+                </div>
+                <div id="guidedReview"></div>
+            </div>
+
+        </div><!-- /.wizard-card -->
+
+        <div class="wizard-nav">
+            <button class="btn" id="g_prevBtn" onclick="guidedPrev()" style="display:none">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <span class="spacer"></span>
+            <button class="btn" onclick="saveDraft()"><i class="fas fa-save"></i> Save Draft</button>
+            <button class="btn btn-primary" id="g_nextBtn" onclick="guidedNext()">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+            <button class="btn btn-success" id="g_submitBtn" onclick="submitRequest()" style="display:none">
+                <i class="fas fa-paper-plane"></i> Submit Request
+            </button>
+        </div>
+    </div><!-- /#guidedMode -->
+
+
+    <!-- ═══════════════════ MANUAL MODE ═══════════════════ -->
+    <div id="manualMode" style="display:none">
+        <div class="wizard-progress" id="manualProgress"></div>
+
+        <div class="wizard-card">
+
+            <!-- M1: Request Info -->
+            <div class="manual-step active" data-mstep="1">
+                <div class="step-header">
+                    <h2><i class="fas fa-clipboard-list"></i> Request Information</h2>
+                    <p>Basic information about who is making this request.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Unit <span class="required">*</span></label>
+                    <select id="m_unitId" class="form-control" required>
+                        <option value="">Loading units…</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Request Type <span class="required">*</span></label>
+                        <select id="m_requestType" class="form-control" required>
+                            <option value="">Select…</option>
+                            <option value="permanent">Permanent</option>
+                            <option value="exercise">Temporary — Training / Exercise</option>
+                            <option value="real_world">Temporary — Real World</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <select id="m_priority" class="form-control">
+                            <option value="routine">Routine</option>
+                            <option value="urgent">Urgent</option>
+                            <option value="emergency">Emergency</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Net Name</label>
+                        <input type="text" id="m_netName" class="form-control" placeholder="Command Net">
+                    </div>
+                    <div class="form-group">
+                        <label>Callsign</label>
+                        <input type="text" id="m_callsign" class="form-control" placeholder="DRAGON 6">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Purpose <span class="required">*</span></label>
+                    <input type="text" id="m_purpose" class="form-control" required placeholder="Command &amp; Control, Admin/Log, etc.">
+                </div>
+
+                <hr class="section-divider">
+
+                <div class="form-group">
+                    <label>Classification <span class="required">*</span></label>
+                    <select id="m_classification" class="form-control" onchange="onClassificationChange('m_classification','m_siprBanner','m_nextBtn')">
+                        <option value="UNCLASS">UNCLASSIFIED</option>
+                        <option value="FOUO">FOUO</option>
+                        <option value="SECRET">SECRET</option>
+                        <option value="TS">TOP SECRET</option>
+                    </select>
+                </div>
+
+                <div id="m_siprBanner" class="sipr-banner" style="display:none">
+                    <i class="fas fa-shield-alt"></i>
+                    <strong>All Classified Requests Must Be Submitted on SIPR.</strong>
+                    <span>This form is for UNCLASSIFIED use only. Please submit your request through the appropriate classified network.</span>
+                </div>
+
+            </div>
+
+            <!-- M2: Frequency -->
+            <div class="manual-step" data-mstep="2">
+                <div class="step-header">
+                    <h2><i class="fas fa-wave-square"></i> Frequency Requirements</h2>
+                    <p>Specify the frequency or range needed.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Requested Frequency (MHz)</label>
+                    <input type="text" id="m_requestedFreq" class="form-control" placeholder="e.g., 35.450">
+                    <span class="form-hint">Leave blank to specify a range below</span>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Min Frequency (MHz)</label>
+                        <input type="number" step="0.001" id="m_freqMin" class="form-control" placeholder="30.000">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Frequency (MHz)</label>
+                        <input type="number" step="0.001" id="m_freqMax" class="form-control" placeholder="88.000">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Number of Frequencies Requested</label>
+                    <input type="number" id="m_numFrequencies" class="form-control" value="1" min="1">
+                    <span class="form-hint">Separate frequencies needed</span>
+                </div>
+            </div>
+
+            <!-- M3: Technical -->
+            <div class="manual-step" data-mstep="3">
+                <div class="step-header">
+                    <h2><i class="fas fa-cogs"></i> Technical Specifications</h2>
+                    <p>Emission designator, power, coverage, and equipment details.</p>
+                </div>
+
+                <!-- Transmitter identification -->
+                <div class="txrx-header tx"><i class="fas fa-broadcast-tower"></i> Transmitter (Tx) <span class="txrx-badge tx">TX</span></div>
+
+                <!-- Equipment library cascade -->
+                <div id="m_equipLibrary" style="margin-bottom:18px;padding:14px 16px;
+                     background:rgba(15,23,42,0.5);border:1px solid rgba(100,150,255,0.12);border-radius:10px;">
+                    <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">
+                        <i class="fas fa-database" style="margin-right:5px;"></i> Equipment Library
+                    </div>
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">Equipment</label>
+                        <select id="m_equipLibSel" class="form-control" onchange="onManualEquipLibChange()">
+                            <option value="">— Select from library —</option>
+                        </select>
+                    </div>
+                    <div id="m_txRow" style="display:none;margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">Transmitter</label>
+                        <select id="m_txSel" class="form-control" onchange="onManualTxSelChange()">
+                            <option value="">— Select transmitter —</option>
+                        </select>
+                    </div>
+                    <div id="m_modeRow" style="display:none;margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">Mode / Emission</label>
+                        <select id="m_modeSel" class="form-control" onchange="onManualModeSelChange()">
+                            <option value="">— Select mode —</option>
+                        </select>
+                    </div>
+                    <div id="m_antRow" style="display:none;margin-bottom:10px;">
+                        <label style="font-size:0.82rem;">
+                            Antenna
+                            <span id="m_antFilterNote" style="font-size:0.7rem;color:#64748b;margin-left:6px;font-weight:400;"></span>
+                        </label>
+                        <select id="m_antLibSel" class="form-control" onchange="onManualAntSelChange()">
+                            <option value="">— Select antenna —</option>
+                        </select>
+                    </div>
+                    <div id="m_libPreview" style="display:none;margin-top:8px;padding:10px 12px;
+                         background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.2);border-radius:7px;
+                         align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <div id="m_libPreviewText" style="font-size:0.82rem;color:#e2e8f0;flex:1;min-width:0;"></div>
+                        <button type="button" onclick="applyManualLibMode()"
+                                style="flex-shrink:0;padding:6px 14px;background:rgba(16,185,129,0.2);
+                                       border:1px solid rgba(16,185,129,0.4);border-radius:6px;
+                                       color:#34d399;font-size:0.82rem;cursor:pointer;white-space:nowrap;">
+                            <i class="fas fa-check"></i> Apply to form
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Emission Designator / RF Bandwidth</label>
+                        <input type="text" id="m_emissionDesignator" class="form-control" placeholder="e.g., 16K0F3E or 25 kHz">
+                        <span class="form-hint">e.g., 16K0F3E (SINCGARS), 6K00F3E (Harris FALCON), 200KF3E (SATCOM) — enter occupied RF bandwidth if designator unknown (e.g., 25 kHz)</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Bandwidth <span class="optional">(if separate)</span></label>
+                        <input type="text" id="m_bandwidth" class="form-control" placeholder="25 kHz">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Power (Watts)</label>
+                        <input type="number" id="m_powerWatts" class="form-control" placeholder="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Authorized Radius (km)</label>
+                        <input type="number" step="0.1" id="m_authorizedRadius" class="form-control" placeholder="35">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Antenna Type <span class="optional">(Field 354)</span></label>
+                        <div class="ant-combo">
+                            <input type="text" id="m_antennaTypeText" class="form-control ant-combo-input"
+                                   placeholder="Type to search antenna types…" autocomplete="off">
+                            <input type="hidden" id="m_antennaType">
+                            <div class="ant-combo-list" id="m_antennaTypeList" style="display:none"></div>
+                        </div>
+                        <span class="form-hint">Annex G — Field 354 antenna type</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Antenna Make / Model <span class="optional">(if known)</span></label>
+                        <input type="text" id="m_antennaMakeModel" class="form-control" placeholder="e.g., Harris RF-3590-AT001">
+                        <span class="form-hint">Manufacturer and model — e.g., Sinclair SD1423, L3Harris RF-3590-AT001</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Antenna Gain (dBi)</label>
+                        <input type="number" step="0.1" id="m_antennaGain" class="form-control" placeholder="e.g., 2.15">
+                        <span class="form-hint">Whip ≈ 2 dBi &nbsp;·&nbsp; Yagi ≈ 7–12 dBi &nbsp;·&nbsp; Dish/parabolic ≈ 20–40 dBi</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Polarization <span class="optional">(Field 363)</span></label>
+                        <select id="m_antennaPolarization" class="form-control">
+                            <option value="">— Select —</option>
+                            <option value="V">V — Vertical</option>
+                            <option value="H">H — Horizontal</option>
+                            <option value="C">C — Circular (RHCP / LHCP)</option>
+                            <option value="E">E — Elliptical</option>
+                            <option value="M">M — Mixed / Slant</option>
+                        </select>
+                        <span class="form-hint">Most tactical radios: Vertical (V) &nbsp;·&nbsp; SATCOM / GPS: Circular (C)</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Orientation <span class="optional">(Field 362)</span></label>
+                        <select id="m_antennaOrientation" class="form-control">
+                            <option value="">— Select —</option>
+                            <option value="ND">ND — Non-directional / omni</option>
+                            <option value="SSH">SSH — Scanning horizontally (limited sector)</option>
+                            <option value="SSV">SSV — Vertical scanning / nodding</option>
+                            <option value="NB">NB — Narrow beam (space station)</option>
+                            <option value="EC">EC — Earth coverage (space station)</option>
+                        </select>
+                        <span class="form-hint">Most tactical antennas: ND &nbsp;·&nbsp; Sector/phased arrays: SSH &nbsp;·&nbsp; For fixed azimuth bearings use field 362 per SFAF</span>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Horizontal Beamwidth <span class="optional">(Field 360)</span></label>
+                        <input type="number" step="0.1" id="m_txHorizBeamwidth" class="form-control" placeholder="degrees (e.g. 17.2)">
+                        <span class="form-hint">3 dB horizontal beamwidth in degrees — omit for omni antennas</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Vertical Beamwidth <span class="optional">(Field 361)</span></label>
+                        <input type="number" step="0.1" id="m_txVertBeamwidth" class="form-control" placeholder="degrees (e.g. 23)">
+                        <span class="form-hint">3 dB vertical beamwidth in degrees — omit for omni antennas</span>
+                    </div>
+                </div>
+
+                <!-- Tx Station Type (Fixed / Mobile) -->
+                <div class="form-group">
+                    <label>Tx Station Type</label>
+                    <div class="freq-toggle" style="margin-bottom:6px">
+                        <button class="freq-toggle-btn active" id="m_txMobileBtn" onclick="setStationMobility('m','tx','mobile')">
+                            <i class="fas fa-truck-moving"></i> Mobile
+                        </button>
+                        <button class="freq-toggle-btn" id="m_txFixedBtn" onclick="setStationMobility('m','tx','fixed')">
+                            <i class="fas fa-map-pin"></i> Fixed
+                        </button>
+                    </div>
+                    <div id="m_txFixedFields" class="fixed-fields-box" style="display:none">
+                        <div class="fixed-label"><i class="fas fa-map-pin"></i> Fixed Station Parameters</div>
+                        <div class="form-row">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Site Elevation — AMSL <span class="optional">(Field 358)</span></label>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <input type="number" step="0.1" id="m_txElevation" class="form-control" placeholder="e.g., 42" oninput="calcHAMSL('m_txElevation','m_txFeedpointHeight','m_txHAMSL')">
+                                    <span class="mobility-unit">m</span>
+                                </div>
+                                <span class="form-hint">Height above mean sea level, in meters</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Antenna Feedpoint Height — AGL <span class="optional">(Field 360)</span></label>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <input type="number" step="0.1" id="m_txFeedpointHeight" class="form-control" placeholder="e.g., 12" oninput="calcHAMSL('m_txElevation','m_txFeedpointHeight','m_txHAMSL')">
+                                    <span class="mobility-unit">m</span>
+                                </div>
+                                <span class="form-hint">Height of feedpoint above ground, in meters</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Feedpoint Height — AMSL <span class="optional">(Field 361, auto)</span></label>
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <input type="number" step="0.1" id="m_txHAMSL" class="form-control" placeholder="Auto (358 + 360)" readonly style="opacity:0.6;cursor:not-allowed">
+                                    <span class="mobility-unit">m</span>
+                                </div>
+                                <span class="form-hint">Computed: Site Elevation + Feedpoint Height</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <!-- Rx same as Tx -->
+                <div class="form-group">
+                    <label class="check-label" style="font-size:0.88rem;color:#c0c0c0;align-items:flex-start;gap:10px">
+                        <input type="checkbox" id="m_rxSameAsTx" checked onchange="toggleRxSection('m')" style="margin-top:2px;flex-shrink:0">
+                        <span><strong>Rx is same as Tx</strong> — receiver uses the same equipment and installation as the transmitter</span>
+                    </label>
+                </div>
+
+                <!-- Rx section (shown when Rx differs from Tx) -->
+                <div id="m_rxSection" style="display:none">
+                    <div class="rx-section-wrapper">
+                        <div class="txrx-header rx"><i class="fas fa-satellite-dish"></i> Receiver (Rx) <span class="txrx-badge rx">RX</span></div>
+                        <div class="form-row" style="margin-bottom:14px">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Equipment Make / Model</label>
+                                <input type="text" id="m_rxMakeModel" class="form-control" placeholder="e.g., Harris Falcon III RF-7850M">
+                                <span class="form-hint">Manufacturer and model of the receiver unit</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Antenna Type <span class="optional">(Field 354)</span></label>
+                                <input type="text" id="m_rxAntennaType" class="form-control" placeholder="e.g., Yagi, Parabolic Dish, Whip">
+                            </div>
+                        </div>
+                        <div class="form-row" style="margin-bottom:14px">
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Horizontal Beamwidth <span class="optional">(Field 460)</span></label>
+                                <input type="number" step="0.1" id="m_rxHorizBeamwidth" class="form-control" placeholder="degrees (e.g. 17.2)">
+                                <span class="form-hint">3 dB horizontal beamwidth in degrees — omit for omni antennas</span>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0">
+                                <label>Rx Vertical Beamwidth <span class="optional">(Field 461)</span></label>
+                                <input type="number" step="0.1" id="m_rxVertBeamwidth" class="form-control" placeholder="degrees (e.g. 23)">
+                                <span class="form-hint">3 dB vertical beamwidth in degrees — omit for omni antennas</span>
+                            </div>
+                        </div>
+                        <!-- Rx Station Type -->
+                        <div class="form-group">
+                            <label>Rx Station Type</label>
+                            <div class="freq-toggle" style="margin-bottom:6px">
+                                <button class="freq-toggle-btn active" id="m_rxMobileBtn" onclick="setStationMobility('m','rx','mobile')">
+                                    <i class="fas fa-truck-moving"></i> Mobile
+                                </button>
+                                <button class="freq-toggle-btn" id="m_rxFixedBtn" onclick="setStationMobility('m','rx','fixed')">
+                                    <i class="fas fa-map-pin"></i> Fixed
+                                </button>
+                            </div>
+                            <div id="m_rxFixedFields" class="fixed-fields-box" style="display:none">
+                                <div class="fixed-label"><i class="fas fa-map-pin"></i> Fixed Station Parameters</div>
+                                <div class="form-row">
+                                    <div class="form-group" style="margin-bottom:0">
+                                        <label>Site Elevation — AMSL <span class="optional">(Field 458)</span></label>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <input type="number" step="0.1" id="m_rxElevation" class="form-control" placeholder="e.g., 42" oninput="calcHAMSL('m_rxElevation','m_rxFeedpointHeight','m_rxHAMSL')">
+                                            <span class="mobility-unit">m</span>
+                                        </div>
+                                        <span class="form-hint">Height above mean sea level, in meters</span>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:0">
+                                        <label>Antenna Feedpoint Height — AGL <span class="optional">(Field 459)</span></label>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <input type="number" step="0.1" id="m_rxFeedpointHeight" class="form-control" placeholder="e.g., 12" oninput="calcHAMSL('m_rxElevation','m_rxFeedpointHeight','m_rxHAMSL')">
+                                            <span class="mobility-unit">m</span>
+                                        </div>
+                                        <span class="form-hint">Height of feedpoint above ground, in meters</span>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:0">
+                                        <label>Feedpoint Height — AMSL <span class="optional">(auto)</span></label>
+                                        <div style="display:flex;align-items:center;gap:8px">
+                                            <input type="number" step="0.1" id="m_rxHAMSL" class="form-control" placeholder="Auto (458 + 459)" readonly style="opacity:0.6;cursor:not-allowed">
+                                            <span class="mobility-unit">m</span>
+                                        </div>
+                                        <span class="form-hint">Computed: Site Elevation + Feedpoint Height</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider">
+
+                <div class="form-group">
+                    <label>Coverage Area</label>
+                    <input type="text" id="m_coverageArea" class="form-control" placeholder="Fort Liberty training areas, AO HAMMER">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Transmitters</label>
+                        <input type="number" id="m_numTransmitters" class="form-control" value="1" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Receivers</label>
+                        <input type="number" id="m_numReceivers" class="form-control" value="1" min="1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Hours of Operation</label>
+                    <input type="text" id="m_hours" class="form-control" placeholder="24/7 or 0600–1800 local">
+                </div>
+            </div>
+
+            <!-- M4: Security -->
+            <div class="manual-step" data-mstep="4">
+                <div class="step-header">
+                    <h2><i class="fas fa-shield-alt"></i> Security &amp; Coordination</h2>
+                </div>
+
+                <div class="form-group">
+                    <label class="check-label">
+                        <input type="checkbox" id="m_isEncrypted"
+                            onchange="document.getElementById('m_encryptionGroup').style.display=this.checked?'block':'none'">
+                        Encrypted communications
+                    </label>
+                </div>
+                <div class="form-group" id="m_encryptionGroup" style="display:none">
+                    <label>Encryption type</label>
+                    <input type="text" id="m_encryptionType" class="form-control" placeholder="AES256, TYPE1, etc.">
+                </div>
+
+                <hr class="section-divider">
+
+                <div class="form-group">
+                    <label class="check-label">
+                        <input type="checkbox" id="m_requiresCoord"
+                            onchange="document.getElementById('m_coordGroup').style.display=this.checked?'block':'none'">
+                        Requires frequency coordination
+                    </label>
+                </div>
+                <div class="form-group" id="m_coordGroup" style="display:none">
+                    <label>Coordination notes</label>
+                    <textarea id="m_coordNotes" class="form-control" rows="3" placeholder="Specify coordination requirements…"></textarea>
+                </div>
+            </div>
+
+            <!-- M5: Justification -->
+            <div class="manual-step" data-mstep="5">
+                <div class="step-header">
+                    <h2><i class="fas fa-clipboard-check"></i> Justification</h2>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start Date <span class="required">*</span></label>
+                        <input type="date" id="m_startDate" class="form-control" required>
+                        <button type="button" class="btn-clear-date" onclick="document.getElementById('m_startDate').value=''">Clear</button>
+                    </div>
+                    <div class="form-group">
+                        <label>End Date <span class="optional">(optional)</span></label>
+                        <input type="date" id="m_endDate" class="form-control">
+                        <button type="button" class="btn-clear-date" onclick="document.getElementById('m_endDate').value=''">Clear</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Justification <span class="required">*</span></label>
+                    <textarea id="m_justification" class="form-control" rows="5" required
+                        placeholder="Provide detailed justification for this frequency request…"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Mission Impact if Denied <span class="optional">(optional)</span></label>
+                    <textarea id="m_missionImpact" class="form-control" rows="3"
+                        placeholder="Describe the impact on mission if this request is denied…"></textarea>
+                </div>
+            </div>
+
+            <!-- M6: Review -->
+            <div class="manual-step" data-mstep="6">
+                <div class="step-header">
+                    <h2><i class="fas fa-check-circle" style="color:#10b981"></i> Review &amp; Submit</h2>
+                    <p>Verify your information before submitting.</p>
+                </div>
+                <div id="manualReview"></div>
+            </div>
+
+        </div><!-- /.wizard-card -->
+
+        <div class="wizard-nav">
+            <button class="btn" id="m_prevBtn" onclick="manualPrev()" style="display:none">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <span class="spacer"></span>
+            <button class="btn" onclick="saveDraft()"><i class="fas fa-save"></i> Save Draft</button>
+            <button class="btn btn-primary" id="m_nextBtn" onclick="manualNext()">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+            <button class="btn btn-success" id="m_submitBtn" onclick="submitRequest()" style="display:none">
+                <i class="fas fa-paper-plane"></i> Submit Request
+            </button>
+        </div>
+    </div><!-- /#manualMode -->
+
+    </div><!-- /.req-form-col -->
+    </div><!-- /.req-layout -->
+
+</div><!-- /.page -->
+
+<!-- Conflict modal -->
+<div class="modal-overlay" id="conflictModal">
+    <div class="modal-box">
+        <h3><i class="fas fa-exclamation-triangle"></i> Potential Conflicts Detected</h3>
+        <div id="conflictDetails" style="font-size:0.85rem;color:#c0c0c0;line-height:1.6"></div>
+        <div class="modal-footer">
+            <button class="btn" onclick="document.getElementById('conflictModal').classList.remove('open')">
+                <i class="fas fa-arrow-left"></i> Review
+            </button>
+            <button class="btn btn-primary" onclick="submitAnyway()">Submit Anyway</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/request_frequency.js"></script>
+</body>
+</html>

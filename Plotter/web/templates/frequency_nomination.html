@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frequency Nomination Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/shared-nav.css">
+    <link rel="stylesheet" href="/css/frequency_nomination.css">
+    <script src="/js/modules/auth-guard.js"></script>
+    <script>requireRole(['admin', 'ntia', 'agency', 'combatant_command', 'command', 'ism', 'operator']);</script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+            <div class="navigation-bar">
+        <div class="nav-logo">
+            <i class="fas fa-tower-broadcast"></i>
+            <span>SFAF Plotter</span>
+        </div>
+        <div class="nav-links nav-links-center">
+            <a href="/map-viewer" class="nav-link">
+                <i class="fas fa-map-marked-alt"></i><span>Map</span>
+            </a>
+            <a href="/database" class="nav-link">
+                <i class="fas fa-database"></i><span>Database</span>
+            </a>
+            <a href="/frequency" class="nav-link">
+                <i class="fas fa-broadcast-tower"></i><span>Frequencies</span>
+            </a>
+            <a href="/workbox" class="nav-link ism-nav-link" style="display:none">
+                <i class="fas fa-inbox"></i><span>Workbox</span>
+            </a>
+            <a href="/frequency-nomination" class="nav-link active">
+                <i class="fas fa-wave-square"></i><span>Freq Tool</span>
+            </a>
+            <a href="/view-manager" class="nav-link">
+                <i class="fas fa-table"></i><span>Table Manager</span>
+            </a>
+            <a href="/admin" class="nav-link admin-console-link" style="display:none">
+                <i class="fas fa-shield-halved"></i><span>Admin</span>
+            </a>
+        </div>
+        <div class="nav-links nav-links-right">
+            <a href="/profile" class="nav-link" title="Account">
+                <i class="fas fa-user-circle"></i><span>Account</span>
+            </a>
+            <button class="nav-link" onclick="handleLogout()" title="Logout"
+                    style="background:none;border:none;cursor:pointer;color:inherit;">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+            </button>
+        </div>
+    </div>
+<!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Panel -->
+            <section class="input-panel">
+                <h2><i class="fas fa-sliders-h"></i> Search Parameters</h2>
+
+                <!-- Pool status banner -->
+                <div id="poolStatusBanner" class="pool-status-banner loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading pool assignments...
+                </div>
+
+                <div class="form-group">
+                    <label for="startFreq">Min Frequency (MHz)</label>
+                    <input type="number" id="startFreq" class="form-input" step="0.001" placeholder="e.g., 225.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="endFreq">Max Frequency (MHz)</label>
+                    <input type="number" id="endFreq" class="form-input" step="0.001" placeholder="e.g., 400.0">
+                </div>
+
+                <div class="form-group">
+                    <label for="emissionType">Emission Type</label>
+                    <input type="text" id="emissionType" class="form-input" placeholder="e.g., F3E, A3E (leave blank for any)">
+                </div>
+
+                <div class="form-group">
+                    <label for="minBandwidthKhz">Min Bandwidth (kHz)</label>
+                    <input type="number" id="minBandwidthKhz" class="form-input" step="0.1" placeholder="Leave blank for any">
+                </div>
+
+                <div class="form-group">
+                    <label for="maxPowerWatts">Max Power (Watts)</label>
+                    <input type="number" id="maxPowerWatts" class="form-input" step="1" placeholder="Leave blank for any">
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn btn-primary btn-block" onclick="runAnalysis()">
+                        <i class="fas fa-search"></i> Find Available Pool Frequencies
+                    </button>
+                    <button class="btn btn-secondary btn-block" onclick="testBandwidthCalculation()">
+                        <i class="fas fa-flask"></i> Test Bandwidth Calculator
+                    </button>
+                </div>
+
+                <div class="info-box">
+                    <h4><i class="fas fa-info-circle"></i> How It Works</h4>
+                    <ul>
+                        <li>Pool assignments are SFAF records with no geographic constraints (no fields 306, 406, 530, or 531)</li>
+                        <li>Filter by frequency range, emission type, bandwidth, and power</li>
+                        <li>Matching pool records are shown as nomination candidates</li>
+                        <li>Select a frequency to use it in a frequency request</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Results Panel -->
+            <section class="results-panel">
+                <div class="results-header">
+                    <h2><i class="fas fa-list"></i> Nomination Results</h2>
+                    <div class="results-actions">
+                        <button class="btn btn-sm" onclick="exportResults()">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                        <button class="btn btn-sm" onclick="clearResults()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div id="resultsStats" class="results-stats" style="display: none;">
+                    <div class="stat-card">
+                        <i class="fas fa-check-circle"></i>
+                        <div class="stat-value" id="availableCount">0</div>
+                        <div class="stat-label">Matching</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-swimming-pool"></i>
+                        <div class="stat-value" id="totalScanned">0</div>
+                        <div class="stat-label">Pool Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-filter"></i>
+                        <div class="stat-value" id="conflictCount">0</div>
+                        <div class="stat-label">Filtered Out</div>
+                    </div>
+                </div>
+
+                <div id="resultsTable" class="results-table-container">
+                    <div class="empty-state">
+                        <i class="fas fa-wave-square"></i>
+                        <h3>No Results Yet</h3>
+                        <p>Configure parameters and click "Generate Frequency List" to begin</p>
+                    </div>
+                </div>
+
+                <!-- Conflicts Panel -->
+                <div id="conflictsPanel" class="conflicts-panel" style="display: none;">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Detected Conflicts</h3>
+                    <div id="conflictsList"></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bandwidth Calculator Modal -->
+        <div id="bandwidthModal" class="modal" style="display: none;">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3><i class="fas fa-calculator"></i> Bandwidth Calculator</h3>
+                    <button class="modal-close" onclick="closeBandwidthModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="emsInput">Emission Designator</label>
+                        <input type="text" id="emsInput" class="form-input" placeholder="e.g., 6K00A3E">
+                    </div>
+                    <div class="form-group">
+                        <label for="unitSelect">Output Unit</label>
+                        <select id="unitSelect" class="form-input">
+                            <option value="H">Hz</option>
+                            <option value="K">kHz</option>
+                            <option value="M" selected>MHz</option>
+                            <option value="G">GHz</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="calculateSingleBandwidth()">
+                        <i class="fas fa-calculator"></i> Calculate
+                    </button>
+                    <div id="bandwidthResult" class="result-display" style="display: none;"></div>
+
+                    <hr>
+
+                    <div id="testResults" class="test-results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/frequency_nomination.js"></script>
+    <script>
+        // Pool assignments loaded from the database
+        let poolAssignments = [];
+
+        // Load pool assignments on page init
+        async function loadPoolAssignments() {
+            const banner = document.getElementById('poolStatusBanner');
+            try {
+                const res = await fetch('/api/sfaf/pool-assignments');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                poolAssignments = data.pool_assignments || [];
+                banner.className = 'pool-status-banner ready';
+                banner.innerHTML = `<i class="fas fa-swimming-pool"></i> ${poolAssignments.length} pool assignment${poolAssignments.length !== 1 ? 's' : ''} loaded`;
+            } catch (err) {
+                console.error('Failed to load pool assignments:', err);
+                banner.className = 'pool-status-banner error';
+                banner.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed to load pool assignments';
+            }
+        }
+
+        function runAnalysis() {
+            if (poolAssignments.length === 0) {
+                alert('No pool assignments loaded. Please wait for the database to load or check your connection.');
+                return;
+            }
+
+            const startFreq  = parseFloat(document.getElementById('startFreq').value) || null;
+            const endFreq    = parseFloat(document.getElementById('endFreq').value) || null;
+            const emType     = (document.getElementById('emissionType').value || '').trim().toUpperCase();
+            const minBwKhz   = parseFloat(document.getElementById('minBandwidthKhz').value) || null;
+            const maxPowerW  = parseFloat(document.getElementById('maxPowerWatts').value) || null;
+
+            let filtered = poolAssignments.slice();
+
+            if (startFreq !== null) filtered = filtered.filter(p => p.frequency_mhz >= startFreq);
+            if (endFreq   !== null) filtered = filtered.filter(p => p.frequency_mhz <= endFreq);
+            if (emType)             filtered = filtered.filter(p => (p.emission_type || '').toUpperCase() === emType);
+            if (minBwKhz  !== null) filtered = filtered.filter(p => p.emission_bandwidth_khz >= minBwKhz);
+            if (maxPowerW !== null) filtered = filtered.filter(p => p.power_watts <= maxPowerW);
+
+            displayResults(filtered, poolAssignments.length);
+        }
+
+        function displayResults(matches, totalPool) {
+            const container = document.getElementById('resultsTable');
+            const stats     = document.getElementById('resultsStats');
+
+            document.getElementById('availableCount').textContent = matches.length;
+            document.getElementById('totalScanned').textContent   = totalPool;
+            document.getElementById('conflictCount').textContent  = totalPool - matches.length;
+            stats.style.display = 'flex';
+
+            if (matches.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-times-circle"></i>
+                        <h3>No Matching Pool Frequencies</h3>
+                        <p>Try relaxing your filter criteria</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Serial</th>
+                            <th>Frequency</th>
+                            <th>Emission</th>
+                            <th>BW (kHz)</th>
+                            <th>Power (W)</th>
+                            <th>Coverage</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${matches.map((p, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td>${p.serial || '—'}</td>
+                                <td class="freq-cell">${p.field110 || p.frequency_mhz.toFixed(3)}</td>
+                                <td>${p.field114 || '—'}</td>
+                                <td>${p.emission_bandwidth_khz ? p.emission_bandwidth_khz.toFixed(2) : '—'}</td>
+                                <td>${p.power_watts || '—'}</td>
+                                <td>${p.coverage_area || '—'}</td>
+                                <td>
+                                    <button class="btn btn-sm" onclick="selectPoolFrequency(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                                        <i class="fas fa-check"></i> Select
+                                    </button>
+                                </td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function selectPoolFrequency(pool) {
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                    type:         'pool-select',
+                    serial:       pool.serial || null,
+                    field110:     pool.field110 || null,
+                    frequencyMhz: pool.frequency_mhz || null,
+                    field114:     pool.field114 || null,
+                }, window.location.origin);
+                window.close();
+            } else {
+                // Fallback: localStorage when opened as a tab rather than popup
+                localStorage.setItem('poolSelection', JSON.stringify({
+                    serial:       pool.serial || null,
+                    field110:     pool.field110 || null,
+                    frequencyMhz: pool.frequency_mhz || null,
+                    field114:     pool.field114 || null,
+                }));
+                alert(`Pool frequency selected: ${pool.field110 || pool.frequency_mhz} (Serial: ${pool.serial || 'N/A'})\n\nReturn to the approval form — the selection will be applied automatically.`);
+            }
+        }
+
+        function exportResults() {
+            if (poolAssignments.length === 0) { alert('No data to export.'); return; }
+            const rows = [['Serial','Frequency MHz','Field110','Field114','BW kHz','Power W','Coverage']];
+            poolAssignments.forEach(p => {
+                rows.push([p.serial, p.frequency_mhz, p.field110, p.field114,
+                           p.emission_bandwidth_khz, p.power_watts, p.coverage_area]);
+            });
+            const csv = rows.map(r => r.map(v => '"' + String(v ?? '').replace(/"/g,'""') + '"').join(',')).join('\n');
+            const a = document.createElement('a');
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            a.download = 'pool_assignments.csv';
+            a.click();
+        }
+
+        function clearResults() {
+            document.getElementById('resultsTable').innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-wave-square"></i>
+                    <h3>No Results Yet</h3>
+                    <p>Configure parameters and click "Find Available Pool Frequencies" to begin</p>
+                </div>`;
+            document.getElementById('resultsStats').style.display = 'none';
+        }
+
+        function testBandwidthCalculation() {
+            const results = frequencyNomination.testBandwidths();
+            document.getElementById('testResults').innerHTML = `
+                <h4>Test Results:</h4>
+                <table class="test-table">
+                    <thead><tr><th>Emission Designator</th><th>MHz</th><th>kHz</th><th>Hz</th></tr></thead>
+                    <tbody>
+                        ${results.map(r => `
+                            <tr>
+                                <td><code>${r.emissionDesignator}</code></td>
+                                <td>${r.bandwidthMHz.toFixed(9)}</td>
+                                <td>${r.bandwidthKHz.toFixed(6)}</td>
+                                <td>${r.bandwidthHz.toFixed(3)}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>`;
+            document.getElementById('bandwidthModal').style.display = 'flex';
+        }
+
+        function calculateSingleBandwidth() {
+            const ems  = document.getElementById('emsInput').value;
+            const unit = document.getElementById('unitSelect').value;
+            const result = frequencyNomination.getBandwidthEMS(ems, unit);
+            const resultDiv = document.getElementById('bandwidthResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<strong>Result:</strong> ${result} ${unit === 'H' ? 'Hz' : unit === 'K' ? 'kHz' : unit === 'M' ? 'MHz' : 'GHz'}`;
+        }
+
+        function closeBandwidthModal() {
+            document.getElementById('bandwidthModal').style.display = 'none';
+        }
+
+        // Load pool data when page is ready
+        document.addEventListener('DOMContentLoaded', loadPoolAssignments);
+    </script>
+</body>
+</html>
